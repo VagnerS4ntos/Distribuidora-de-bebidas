@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentMember } from "@/features/auth/current-member";
 
 export type ProductListItem = {
   id: string;
@@ -28,19 +29,13 @@ function asNumber(value: unknown) {
 
 export async function getProductsPageData(): Promise<ProductsPageData> {
   const supabase = await createClient();
+  const membership = await getCurrentMember();
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("organization_members")
-    .select("organization_id, organizations(name)")
-    .limit(1)
-    .maybeSingle();
-
-  if (membershipError) throw membershipError;
-  if (!membership?.organization_id) {
+  if (!membership) {
     return { products: [], categoryCount: 0, organizationName: null, hasMembership: false };
   }
 
-  const organizationId = membership.organization_id;
+  const organizationId = membership.organizationId;
   const [{ data: products, error: productsError }, { count, error: categoriesError }] =
     await Promise.all([
       supabase
@@ -83,8 +78,7 @@ export async function getProductsPageData(): Promise<ProductsPageData> {
       };
     }),
     categoryCount: count ?? 0,
-    organizationName:
-      (membership.organizations as { name?: string } | null)?.name ?? null,
+    organizationName: membership.organizationName,
     hasMembership: true,
   };
 }

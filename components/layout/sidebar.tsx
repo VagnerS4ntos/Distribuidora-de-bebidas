@@ -12,6 +12,7 @@ import {
   PackageOpen,
   ShoppingBag,
   Truck,
+  UserCog,
   UsersRound,
   WalletCards,
 } from "lucide-react";
@@ -49,7 +50,7 @@ function NavItems({ items, pathname, pendingHref, onNavigate }: { items: typeof 
   ));
 }
 
-export function Sidebar() {
+export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
   const pathname = usePathname();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
@@ -61,6 +62,14 @@ export function Sidebar() {
         <NavItems items={mainItems} pathname={pathname} pendingHref={pendingHref} onNavigate={setPendingHref} />
         <p className="side-section-label side-section-gap">Gestão</p>
         <NavItems items={controlItems} pathname={pathname} pendingHref={pendingHref} onNavigate={setPendingHref} />
+        {isOwner && (
+          <NavItems
+            items={[{ href: "/equipe", label: "Equipe", icon: UserCog }]}
+            pathname={pathname}
+            pendingHref={pendingHref}
+            onNavigate={setPendingHref}
+          />
+        )}
       </nav>
       <div className="sidebar-footer">
         <FileText size={16} />
