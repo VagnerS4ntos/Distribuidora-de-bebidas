@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import {
   BarChart3,
   Box,
@@ -33,41 +32,45 @@ const controlItems = [
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 
-function NavItems({ items, pathname, pendingHref, onNavigate }: { items: typeof mainItems; pathname: string; pendingHref: string | null; onNavigate: (href: string) => void }) {
+function NavPendingIndicator({ isCurrent }: { isCurrent: boolean }) {
+  const { pending } = useLinkStatus();
+
+  return pending && !isCurrent ? (
+    <span className="nav-spinner" aria-label="Carregando" />
+  ) : null;
+}
+
+function NavItems({ items, pathname }: { items: typeof mainItems; pathname: string }) {
   return items.map(({ href, label, icon: Icon }) => (
     <Link
-      className={`side-link${pathname === href || pendingHref === href ? " side-link-active" : ""}`}
+      className={`side-link${pathname === href ? " side-link-active" : ""}`}
       href={href}
       key={href}
-      onClick={() => pathname !== href && onNavigate(href)}
       prefetch
       aria-current={pathname === href ? "page" : undefined}
     >
       <Icon size={18} strokeWidth={1.9} />
       <span>{label}</span>
-      {pendingHref === href && pathname !== href && <span className="nav-spinner" aria-label="Carregando" />}
+      <NavPendingIndicator isCurrent={pathname === href} />
     </Link>
   ));
 }
 
 export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
   const pathname = usePathname();
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   return (
     <aside className="sidebar">
       <div className="sidebar-head"><BrandMark /></div>
       <nav className="side-nav" aria-label="Navegação principal">
         <p className="side-section-label">Operação</p>
-        <NavItems items={mainItems} pathname={pathname} pendingHref={pendingHref} onNavigate={setPendingHref} />
+        <NavItems items={mainItems} pathname={pathname} />
         <p className="side-section-label side-section-gap">Gestão</p>
-        <NavItems items={controlItems} pathname={pathname} pendingHref={pendingHref} onNavigate={setPendingHref} />
+        <NavItems items={controlItems} pathname={pathname} />
         {isOwner && (
           <NavItems
             items={[{ href: "/equipe", label: "Equipe", icon: UserCog }]}
             pathname={pathname}
-            pendingHref={pendingHref}
-            onNavigate={setPendingHref}
           />
         )}
       </nav>

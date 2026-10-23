@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Bell, CircleHelp, LogOut, Plus } from "lucide-react";
+import { Bell, CircleHelp, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/layout/brand-mark";
 
 const roleLabels = { owner: "Proprietário", manager: "Gerente", operator: "Operador" } as const;
@@ -11,10 +10,6 @@ export function Topbar({ fullName = "Gestor", role }: { fullName?: string; role?
     <header className="topbar">
       <div className="mobile-brand"><BrandMark compact /></div>
       <div className="topbar-spacer" />
-      <Link href="/vendas" className="button button-primary topbar-action">
-        <Plus size={17} />
-        <span>Nova venda</span>
-      </Link>
       <button className="icon-button" aria-label="Ajuda"><CircleHelp size={19} /></button>
       <button className="icon-button notification-button" aria-label="Notificações">
         <Bell size={19} />

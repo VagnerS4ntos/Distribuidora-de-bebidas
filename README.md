@@ -33,4 +33,12 @@ Ao excluir um membro, a operação também acontece no servidor e remove permane
 
 Owners também podem editar nome, e-mail, telefone e papel dos membros, inclusive os próprios dados e papel. Ao rebaixar o próprio acesso, o usuário deixa de acessar a administração da equipe. A exclusão da própria conta continua bloqueada.
 
+O layout do painel usa uma única assinatura Realtime filtrada pela organização. Depois de criar, editar ou excluir um membro, outras sessões abertas nessa organização atualizam automaticamente a lista, o nome e o perfil exibidos no cabeçalho e a navegação permitida. Uma consulta leve ao `updated_at`, executada a cada cinco segundos somente enquanto a aba estiver visível, funciona como contingência caso o canal seja interrompido. Para habilitar o fluxo instantâneo, execute a migration `20261021223000_enable_team_realtime.sql` no SQL Editor.
+
 Para impedir cadastros fora desse fluxo, desative **Allow new users to sign up** nas configurações de Auth do projeto Supabase. A criação administrativa continuará funcionando.
+
+## Registro de vendas
+
+Os botões **Nova venda** do cabeçalho e da página de vendas abrem o cadastro completo do pedido. A conclusão registra a venda, os itens, o pagamento, a receita financeira e a auditoria, além de baixar o saldo e criar os movimentos de estoque em uma única transação. Execute a migration `20261022012254_create_completed_sale.sql` no SQL Editor antes de registrar a primeira venda.
+
+As quantidades dos produtos são inteiras. As páginas **Vendas** e **Produtos** também acompanham inserções e alterações de vendas da organização em tempo real, atualizando indicadores, histórico e saldos exibidos. Para ativar esse comportamento, execute também a migration `20261022020929_enforce_integer_sale_quantities_and_enable_sales_realtime.sql`.

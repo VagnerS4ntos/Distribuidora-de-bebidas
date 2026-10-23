@@ -45,7 +45,11 @@ export default async function TeamPage({
       </article>
       <article className="panel team-panel">
         <div className="panel-head"><div><span className="panel-kicker">Controle de acesso</span><h2><UserCog size={18} /> Membros da organização</h2></div><span className="table-count"><UsersRound size={14} /> {data.members.length} membro(s)</span></div>
-        <TeamManager initialMembers={data.members} currentUserId={data.currentMember.userId} editingUserId={editingUserId} />
+        <TeamManager
+          initialMembers={data.members}
+          currentUserId={data.currentMember.userId}
+          editingUserId={editingUserId}
+        />
       </article>
     </>
   );

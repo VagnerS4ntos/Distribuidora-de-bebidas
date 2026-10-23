@@ -7,6 +7,7 @@ export type CurrentMember = {
   userId: string;
   organizationId: string;
   organizationName: string;
+  organizationUpdatedAt: string;
   fullName: string;
   role: OrganizationRole;
 };
@@ -22,7 +23,7 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
     await Promise.all([
       supabase
         .from("organization_members")
-        .select("organization_id, role, organizations(name)")
+        .select("organization_id, role, organizations(name, updated_at)")
         .eq("user_id", userId)
         .limit(1)
         .maybeSingle(),
@@ -35,11 +36,16 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
 
   if (membershipError || !membership) return null;
 
+  const organization = membership.organizations as {
+    name?: string;
+    updated_at?: string;
+  } | null;
+
   return {
     userId,
     organizationId: membership.organization_id,
-    organizationName:
-      (membership.organizations as { name?: string } | null)?.name ?? "Minha organização",
+    organizationName: organization?.name ?? "Minha organização",
+    organizationUpdatedAt: organization?.updated_at ?? "",
     fullName: profile?.full_name || "Gestor",
     role: membership.role as OrganizationRole,
   };

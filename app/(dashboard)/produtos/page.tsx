@@ -1,23 +1,59 @@
-import { Box, CircleAlert, PackageOpen, Plus } from "lucide-react";
+import Link from "next/link";
+import { Box, CircleAlert, PackageOpen, Plus, X } from "lucide-react";
+import { RealtimeProductsSync } from "@/components/realtime-products-sync";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getProductsPageData } from "@/features/products/product-service";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
+import { NewProductForm } from "./new-product-form";
 
-export default async function ProductsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ novo?: string; criado?: string }>;
+}) {
+  const params = await searchParams;
   const data = await getProductsPageData();
   const activeProducts = data.products.filter((product) => product.active);
   const returnableProducts = data.products.filter((product) => product.isReturnable);
+  const showNewProduct = params.novo === "1" && data.hasMembership;
 
   return (
     <>
+      {data.organizationId && (
+        <RealtimeProductsSync organizationId={data.organizationId} />
+      )}
+
       <section className="page-heading">
         <div>
           <span className="eyebrow">Cadastros</span>
           <h1>Produtos</h1>
           <p>{data.organizationName ? `Catálogo da ${data.organizationName}.` : "Organize bebidas por categoria, marca e embalagem."}</p>
         </div>
-        <button className="button button-primary"><Plus size={17} />Novo produto</button>
+        {data.hasMembership && (
+          <Link
+            className={`button ${showNewProduct ? "button-secondary" : "button-primary"}`}
+            href={showNewProduct ? "/produtos" : "/produtos?novo=1"}
+            scroll={false}
+          >
+            {showNewProduct ? <X size={17} /> : <Plus size={17} />}
+            {showNewProduct ? "Cancelar" : "Novo produto"}
+          </Link>
+        )}
       </section>
+
+      {params.criado && (
+        <div className="sale-feedback sale-feedback-success" role="status">
+          Produto #{params.criado} cadastrado com sucesso.
+        </div>
+      )}
+
+      {showNewProduct && (
+        <article className="panel product-form-panel">
+          <NewProductForm categories={data.categories} locations={data.locations} />
+        </article>
+      )}
 
       <section className="module-stat-grid">
         <article className="module-stat"><span>Produtos ativos</span><strong>{formatNumber(activeProducts.length)}</strong><small>Itens disponíveis para venda</small></article>

@@ -15,9 +15,22 @@ export type ProductListItem = {
   active: boolean;
 };
 
+export type ProductCategory = {
+  id: string;
+  name: string;
+};
+
+export type ProductStockLocation = {
+  id: string;
+  name: string;
+};
+
 export type ProductsPageData = {
   products: ProductListItem[];
+  categories: ProductCategory[];
+  locations: ProductStockLocation[];
   categoryCount: number;
+  organizationId: string | null;
   organizationName: string | null;
   hasMembership: boolean;
 };
@@ -32,11 +45,23 @@ export async function getProductsPageData(): Promise<ProductsPageData> {
   const membership = await getCurrentMember();
 
   if (!membership) {
-    return { products: [], categoryCount: 0, organizationName: null, hasMembership: false };
+    return {
+      products: [],
+      categories: [],
+      locations: [],
+      categoryCount: 0,
+      organizationId: null,
+      organizationName: null,
+      hasMembership: false,
+    };
   }
 
   const organizationId = membership.organizationId;
-  const [{ data: products, error: productsError }, { count, error: categoriesError }] =
+  const [
+    { data: products, error: productsError },
+    { data: categories, error: categoriesError },
+    { data: locations, error: locationsError },
+  ] =
     await Promise.all([
       supabase
         .from("products")
@@ -47,12 +72,20 @@ export async function getProductsPageData(): Promise<ProductsPageData> {
         .order("name"),
       supabase
         .from("categories")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", organizationId),
+        .select("id, name")
+        .eq("organization_id", organizationId)
+        .order("name"),
+      supabase
+        .from("stock_locations")
+        .select("id, name")
+        .eq("organization_id", organizationId)
+        .eq("active", true)
+        .order("name"),
     ]);
 
   if (productsError) throw productsError;
   if (categoriesError) throw categoriesError;
+  if (locationsError) throw locationsError;
 
   return {
     products: (products ?? []).map((product) => {
@@ -77,7 +110,10 @@ export async function getProductsPageData(): Promise<ProductsPageData> {
         active: product.active,
       };
     }),
-    categoryCount: count ?? 0,
+    categories: categories ?? [],
+    locations: locations ?? [],
+    categoryCount: categories?.length ?? 0,
+    organizationId,
     organizationName: membership.organizationName,
     hasMembership: true,
   };

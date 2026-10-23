@@ -10,13 +10,34 @@ import {
 import { MetricCard } from "@/components/ui/metric-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getCurrentMember } from "@/features/auth/current-member";
 import { getDashboardSnapshot } from "@/features/dashboard/dashboard-service";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
+function getBrasiliaGreeting(date = new Date()) {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(date),
+  );
+
+  if (hour >= 6 && hour < 12) return "Bom dia";
+  if (hour >= 12 && hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 export default async function DashboardPage() {
-  const data = await getDashboardSnapshot();
+  const [data, currentMember] = await Promise.all([
+    getDashboardSnapshot(),
+    isSupabaseConfigured ? getCurrentMember() : Promise.resolve(null),
+  ]);
+  const greeting = getBrasiliaGreeting();
+  const fullName = currentMember?.fullName || "Gestor";
 
   return (
     <>
@@ -28,7 +49,7 @@ export default async function DashboardPage() {
               <span className="demo-badge">Dados de demonstração</span>
             )}
           </div>
-          <h1>Bom dia, Gestor.</h1>
+          <h1>{greeting}, {fullName}.</h1>
           <p>
             Acompanhe o ritmo da <strong>{data.organizationName}</strong> hoje.
           </p>

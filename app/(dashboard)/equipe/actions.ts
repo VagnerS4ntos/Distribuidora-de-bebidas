@@ -40,6 +40,20 @@ const allowedRoles = new Set<OrganizationRole>([
   "operator",
 ]);
 
+async function notifyTeamChanged(
+  admin: ReturnType<typeof createAdminClient>,
+  organizationId: string,
+) {
+  const { error } = await admin
+    .from("organizations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", organizationId);
+
+  if (error) {
+    console.error("Não foi possível publicar a atualização da equipe.", error);
+  }
+}
+
 export async function createOrganizationUser(
   _previousState: CreateUserState,
   formData: FormData,
@@ -70,7 +84,9 @@ export async function createOrganizationUser(
   }
 
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "operator") as OrganizationRole;
@@ -91,7 +107,10 @@ export async function createOrganizationUser(
   }
 
   if (!allowedRoles.has(role)) {
-    return { status: "error", message: "Selecione um perfil de acesso válido." };
+    return {
+      status: "error",
+      message: "Selecione um perfil de acesso válido.",
+    };
   }
 
   let admin;
@@ -100,16 +119,18 @@ export async function createOrganizationUser(
   } catch {
     return {
       status: "error",
-      message: "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
+      message:
+        "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
     };
   }
 
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { display_name: fullName, full_name: fullName },
-  });
+  const { data: created, error: createError } =
+    await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { display_name: fullName, full_name: fullName },
+    });
 
   if (createError || !created.user) {
     const alreadyExists =
@@ -120,8 +141,8 @@ export async function createOrganizationUser(
     return {
       status: "error",
       message: alreadyExists
-        ? "Já existe um usuário com esse e-mail no Supabase Auth."
-        : "Não foi possível criar o usuário no Supabase Auth.",
+        ? "Já existe um usuário com esse e-mail."
+        : "Não foi possível criar o usuário.",
     };
   }
 
@@ -137,13 +158,14 @@ export async function createOrganizationUser(
 
   const nameWasSaved = savedProfile?.full_name.trim() === fullName;
 
-  const { error: memberError } = profileError || !nameWasSaved
-    ? { error: profileError ?? new Error("O nome não foi salvo no perfil.") }
-    : await admin.from("organization_members").insert({
-        organization_id: membership.organization_id,
-        user_id: createdUserId,
-        role,
-      });
+  const { error: memberError } =
+    profileError || !nameWasSaved
+      ? { error: profileError ?? new Error("O nome não foi salvo no perfil.") }
+      : await admin.from("organization_members").insert({
+          organization_id: membership.organization_id,
+          user_id: createdUserId,
+          role,
+        });
 
   if (profileError || !nameWasSaved || memberError) {
     await admin.auth.admin.deleteUser(createdUserId);
@@ -153,11 +175,13 @@ export async function createOrganizationUser(
     };
   }
 
+  await notifyTeamChanged(admin, membership.organization_id);
+
   revalidatePath("/equipe");
   refresh();
   return {
     status: "success",
-    message: `${fullName} foi criado e já pode entrar com a senha temporária.`,
+    message: `${fullName} já pode entrar com a senha temporária.`,
   };
 }
 
@@ -175,7 +199,10 @@ export async function deleteOrganizationUser(
   }
 
   if (targetUserId === currentUser.id) {
-    return { success: false, message: "Você não pode excluir a própria conta." };
+    return {
+      success: false,
+      message: "Você não pode excluir a própria conta.",
+    };
   }
 
   const { data: ownerMembership, error: ownerError } = await supabase
@@ -213,7 +240,8 @@ export async function deleteOrganizationUser(
   } catch {
     return {
       success: false,
-      message: "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
+      message:
+        "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
     };
   }
 
@@ -231,14 +259,16 @@ export async function deleteOrganizationUser(
       success: false,
       message: ownsStorageObjects
         ? "Esse usuário possui arquivos no Storage. Remova ou transfira esses arquivos antes de excluir a conta."
-        : "Não foi possível excluir a conta do Supabase Auth.",
+        : "Não foi possível excluir a conta.",
     };
   }
+
+  await notifyTeamChanged(admin, ownerMembership.organization_id);
 
   revalidatePath("/equipe");
   return {
     success: true,
-    message: "Usuário removido do Auth, do perfil e da organização.",
+    message: "Usuário excluído com sucesso.",
   };
 }
 
@@ -306,22 +336,28 @@ export async function updateOrganizationUser(
   } catch {
     return {
       success: false,
-      message: "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
+      message:
+        "Configure SUPABASE_SECRET_KEY no .env.local e reinicie o servidor.",
     };
   }
 
-  const [{ data: authData, error: authReadError }, { data: profile, error: profileReadError }] =
-    await Promise.all([
-      admin.auth.admin.getUserById(input.userId),
-      admin
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", input.userId)
-        .single(),
-    ]);
+  const [
+    { data: authData, error: authReadError },
+    { data: profile, error: profileReadError },
+  ] = await Promise.all([
+    admin.auth.admin.getUserById(input.userId),
+    admin
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", input.userId)
+      .single(),
+  ]);
 
   if (authReadError || !authData.user || profileReadError || !profile) {
-    return { success: false, message: "Não foi possível carregar os dados atuais." };
+    return {
+      success: false,
+      message: "Não foi possível carregar os dados atuais.",
+    };
   }
 
   const originalEmail = authData.user.email ?? "";
@@ -342,12 +378,14 @@ export async function updateOrganizationUser(
   );
 
   if (authUpdateError) {
-    const duplicateEmail = authUpdateError.message.toLowerCase().includes("email");
+    const duplicateEmail = authUpdateError.message
+      .toLowerCase()
+      .includes("email");
     return {
       success: false,
       message: duplicateEmail
         ? "Esse e-mail já está em uso ou não pode ser atualizado."
-        : "Não foi possível atualizar o usuário no Supabase Auth.",
+        : "Não foi possível atualizar o usuário.",
     };
   }
 
@@ -356,13 +394,14 @@ export async function updateOrganizationUser(
     .update({ full_name: fullName, phone: phone || null })
     .eq("id", input.userId);
 
-  const { error: roleError } = profileError || nextRole === originalRole
-    ? { error: profileError }
-    : await admin
-        .from("organization_members")
-        .update({ role: nextRole })
-        .eq("organization_id", ownerMembership.organization_id)
-        .eq("user_id", input.userId);
+  const { error: roleError } =
+    profileError || nextRole === originalRole
+      ? { error: profileError }
+      : await admin
+          .from("organization_members")
+          .update({ role: nextRole })
+          .eq("organization_id", ownerMembership.organization_id)
+          .eq("user_id", input.userId);
 
   if (profileError || roleError) {
     await Promise.all([
@@ -383,9 +422,12 @@ export async function updateOrganizationUser(
 
     return {
       success: false,
-      message: "A atualização não foi concluída e os dados anteriores foram restaurados.",
+      message:
+        "A atualização não foi concluída e os dados anteriores foram restaurados.",
     };
   }
+
+  await notifyTeamChanged(admin, ownerMembership.organization_id);
 
   revalidatePath("/equipe");
   refresh();

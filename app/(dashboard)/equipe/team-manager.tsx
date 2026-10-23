@@ -13,7 +13,15 @@ const roleLabels: Record<OrganizationRole, string> = {
   operator: "Operador",
 };
 
-export function TeamManager({ initialMembers, currentUserId, editingUserId }: { initialMembers: TeamMember[]; currentUserId: string; editingUserId: string | null }) {
+export function TeamManager({
+  initialMembers,
+  currentUserId,
+  editingUserId,
+}: {
+  initialMembers: TeamMember[];
+  currentUserId: string;
+  editingUserId: string | null;
+}) {
   const router = useRouter();
   const members = initialMembers;
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
@@ -151,7 +159,7 @@ export function TeamManager({ initialMembers, currentUserId, editingUserId }: { 
               if (isEditing) {
                 const formId = `edit-member-${member.userId}`;
                 return (
-                  <tr key={member.userId} className="team-edit-row">
+                  <tr key={`${member.userId}:${member.fullName}:${member.email}:${member.phone ?? ""}:${member.role}`} className="team-edit-row">
                     <td><form id={formId} onSubmit={(event) => updateMember(event, member)}><input className="team-edit-input" name="full_name" defaultValue={member.fullName} aria-label="Nome completo" required minLength={2} maxLength={120} disabled={busyUserId !== null} /></form></td>
                     <td><input className="team-edit-input team-email-input" form={formId} name="email" type="email" defaultValue={member.email} aria-label="E-mail" required disabled={busyUserId !== null} /></td>
                     <td><input className="team-edit-input" form={formId} name="phone" type="tel" defaultValue={member.phone ?? ""} aria-label="Telefone" placeholder="Não informado" disabled={busyUserId !== null} /></td>
