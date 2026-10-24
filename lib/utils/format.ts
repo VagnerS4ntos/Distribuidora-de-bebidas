@@ -8,12 +8,21 @@ const numberFormatter = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
+const quantityFormatter = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 3,
+});
+
 export function formatCurrency(value: number) {
   return currencyFormatter.format(value);
 }
 
 export function formatNumber(value: number) {
   return numberFormatter.format(value);
+}
+
+export function formatQuantity(value: number) {
+  return quantityFormatter.format(value);
 }
 
 export function formatShortDate(value: string | Date) {

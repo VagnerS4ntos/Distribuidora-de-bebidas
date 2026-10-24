@@ -8,7 +8,7 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span className="brand-copy">
-          <strong>Brava</strong>
+          <strong>Santo Gole</strong>
           <small>gestão de bebidas</small>
         </span>
       )}

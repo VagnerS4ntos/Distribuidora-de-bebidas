@@ -1,4 +1,4 @@
-# Brava — gestão de distribuidora de bebidas
+# Santo Gole — gestão de distribuidora de bebidas
 
 Base em **Next.js 16.4.2**, TypeScript e Supabase para controlar vendas, produtos, estoque, compras e financeiro de uma distribuidora.
 

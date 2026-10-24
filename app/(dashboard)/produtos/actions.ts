@@ -32,6 +32,13 @@ export type CreateProductResult = {
   productId?: string;
 };
 
+export type UpdateProductInput = Omit<
+  CreateProductInput,
+  "locationId" | "initialQuantity"
+> & {
+  productId: string;
+};
+
 function optionalText(value: string) {
   const text = value.trim();
   return text || null;
@@ -176,5 +183,136 @@ export async function createProduct(
     success: true,
     message: "Produto cadastrado com sucesso.",
     productId: String(data),
+  };
+}
+
+export async function updateProduct(
+  input: UpdateProductInput,
+): Promise<CreateProductResult> {
+  const currentMember = await getCurrentMember();
+  if (!currentMember) {
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  }
+
+  if (currentMember.role !== "owner" && currentMember.role !== "manager") {
+    return {
+      success: false,
+      message: "Seu perfil não tem permissão para editar produtos.",
+    };
+  }
+
+  if (!uuidPattern.test(input.productId)) {
+    return { success: false, message: "Produto inválido." };
+  }
+
+  const name = input.name.trim();
+  if (name.length < 2 || name.length > 160) {
+    return {
+      success: false,
+      message: "Informe um nome de produto entre 2 e 160 caracteres.",
+    };
+  }
+
+  if (input.categoryId && !uuidPattern.test(input.categoryId)) {
+    return { success: false, message: "Selecione uma categoria válida." };
+  }
+
+  if (!allowedUnits.has(input.unit)) {
+    return { success: false, message: "Selecione uma unidade válida." };
+  }
+
+  const numericFields = [input.costPrice, input.salePrice, input.minimumStock];
+  if (numericFields.some((value) => !Number.isFinite(value) || value < 0)) {
+    return {
+      success: false,
+      message: "Preços e estoque mínimo não podem ser negativos.",
+    };
+  }
+
+  if (!Number.isFinite(input.unitsPerPackage) || input.unitsPerPackage <= 0) {
+    return {
+      success: false,
+      message: "A quantidade por embalagem deve ser maior que zero.",
+    };
+  }
+
+  const brand = optionalText(input.brand);
+  const description = optionalText(input.description);
+  const barcode = optionalText(input.barcode);
+  const sku = optionalText(input.sku);
+
+  if (
+    (brand && brand.length > 120) ||
+    (description && description.length > 1000) ||
+    (barcode && barcode.length > 80) ||
+    (sku && sku.length > 80)
+  ) {
+    return { success: false, message: "Um dos campos ultrapassou o limite permitido." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .update({
+      category_id: input.categoryId,
+      name,
+      brand,
+      description,
+      barcode,
+      sku,
+      unit: input.unit,
+      units_per_package: input.unitsPerPackage,
+      cost_price: input.costPrice,
+      sale_price: input.salePrice,
+      min_stock: input.minimumStock,
+      is_returnable: input.isReturnable,
+      active: input.active,
+    })
+    .eq("organization_id", currentMember.organizationId)
+    .eq("id", input.productId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "23505") {
+      const field = error.message.includes("barcode") ? "código de barras" : "SKU";
+      return {
+        success: false,
+        message: `Já existe outro produto com este ${field} na organização.`,
+      };
+    }
+
+    if (error.code === "23503") {
+      return { success: false, message: "A categoria selecionada não está disponível." };
+    }
+
+    if (error.code === "42501") {
+      return {
+        success: false,
+        message: "Seu perfil não tem permissão para editar produtos.",
+      };
+    }
+
+    return {
+      success: false,
+      message: "Não foi possível atualizar o produto. Tente novamente.",
+    };
+  }
+
+  if (!data) {
+    return {
+      success: false,
+      message: "Produto não encontrado ou indisponível para edição.",
+    };
+  }
+
+  revalidatePath("/produtos");
+  revalidatePath("/vendas");
+  revalidatePath("/dashboard");
+
+  return {
+    success: true,
+    message: "Produto atualizado com sucesso.",
+    productId: data.id,
   };
 }

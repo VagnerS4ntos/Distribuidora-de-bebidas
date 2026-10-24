@@ -3,13 +3,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Brava | Gestão de bebidas",
-    template: "%s | Brava",
+    default: "Santo Gole | Gestão de bebidas",
+    template: "%s | Santo Gole",
   },
-  description: "Controle operacional, estoque, vendas e financeiro para distribuidoras de bebidas.",
+  description:
+    "Controle operacional, estoque, vendas e financeiro para distribuidoras de bebidas.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
       <body>{children}</body>

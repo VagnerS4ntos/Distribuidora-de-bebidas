@@ -2,12 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, LoaderCircle, PackagePlus } from "lucide-react";
+import { Check, LoaderCircle, PackagePlus, Pencil } from "lucide-react";
 import type {
   ProductCategory,
+  ProductListItem,
   ProductStockLocation,
 } from "@/features/products/product-service";
-import { createProduct } from "./actions";
+import { formatNumber } from "@/lib/utils/format";
+import { createProduct, updateProduct } from "./actions";
 
 const unitOptions = [
   { value: "UN", label: "Unidade (UN)" },
@@ -23,9 +25,13 @@ const unitOptions = [
 export function NewProductForm({
   categories,
   locations,
+  product,
+  page,
 }: {
   categories: ProductCategory[];
   locations: ProductStockLocation[];
+  product?: ProductListItem;
+  page: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -57,7 +63,7 @@ export function NewProductForm({
     setBusy(true);
 
     try {
-      const result = await createProduct({
+      const fields = {
         name: String(formData.get("name") ?? ""),
         categoryId: String(formData.get("categoryId") ?? "") || null,
         brand: String(formData.get("brand") ?? ""),
@@ -69,23 +75,34 @@ export function NewProductForm({
         costPrice: Number(formData.get("costPrice")),
         salePrice: Number(formData.get("salePrice")),
         minimumStock: Number(formData.get("minimumStock")),
-        locationId: String(formData.get("locationId") ?? "") || null,
-        initialQuantity: initialQuantityValue,
         isReturnable: formData.get("isReturnable") === "on",
         active: formData.get("active") === "on",
-      });
+      };
+      const result = product
+        ? await updateProduct({ ...fields, productId: product.id })
+        : await createProduct({
+            ...fields,
+            locationId: String(formData.get("locationId") ?? "") || null,
+            initialQuantity: initialQuantityValue,
+          });
 
       if (!result.success || !result.productId) {
         setFeedback(result.message);
         return;
       }
 
-      router.replace(
-        `/produtos?criado=${encodeURIComponent(result.productId.slice(0, 8))}`,
-      );
+      const query = new URLSearchParams({
+        [product ? "atualizado" : "criado"]: result.productId.slice(0, 8),
+      });
+      if (page > 1) query.set("pagina", String(page));
+      router.replace(`/produtos?${query.toString()}`);
       router.refresh();
     } catch {
-      setFeedback("Não foi possível cadastrar o produto. Tente novamente.");
+      setFeedback(
+        product
+          ? "Não foi possível atualizar o produto. Tente novamente."
+          : "Não foi possível cadastrar o produto. Tente novamente.",
+      );
     } finally {
       setBusy(false);
     }
@@ -95,12 +112,16 @@ export function NewProductForm({
     <form className="product-form" onSubmit={submitProduct} aria-busy={busy}>
       <div className="product-form-head">
         <span className="sale-form-icon">
-          <PackagePlus size={20} />
+          {product ? <Pencil size={20} /> : <PackagePlus size={20} />}
         </span>
         <div>
-          <span className="panel-kicker">Novo item</span>
-          <h2>Cadastrar produto</h2>
-          <p>Preencha os dados do catálogo. O saldo será controlado por local de estoque.</p>
+          <span className="panel-kicker">{product ? "Edição" : "Novo item"}</span>
+          <h2>{product ? "Editar produto" : "Cadastrar produto"}</h2>
+          <p>
+            {product
+              ? "Atualize os dados do catálogo. O saldo permanece controlado pelas movimentações de estoque."
+              : "Preencha os dados do catálogo. O saldo será controlado por local de estoque."}
+          </p>
         </div>
       </div>
 
@@ -118,11 +139,11 @@ export function NewProductForm({
         <div className="product-form-grid">
           <label className="product-field-wide">
             <span>Nome <span className="required-mark">*</span></span>
-            <input name="name" type="text" minLength={2} maxLength={160} required disabled={busy} autoFocus />
+            <input name="name" type="text" minLength={2} maxLength={160} defaultValue={product?.name ?? ""} required disabled={busy} autoFocus />
           </label>
           <label>
             Categoria
-            <select name="categoryId" defaultValue="" disabled={busy}>
+            <select name="categoryId" defaultValue={product?.categoryId ?? ""} disabled={busy}>
               <option value="">Sem categoria</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>{category.name}</option>
@@ -131,19 +152,19 @@ export function NewProductForm({
           </label>
           <label>
             Marca
-            <input name="brand" type="text" maxLength={120} disabled={busy} />
+            <input name="brand" type="text" maxLength={120} defaultValue={product?.brand ?? ""} disabled={busy} />
           </label>
-          <label>
+          <label className="product-field-wide">
             SKU
-            <input name="sku" type="text" maxLength={80} disabled={busy} />
+            <input name="sku" type="text" maxLength={80} defaultValue={product?.sku ?? ""} disabled={busy} />
           </label>
-          <label>
+          <label className="product-field-wide">
             Código de barras
-            <input name="barcode" type="text" inputMode="numeric" maxLength={80} disabled={busy} />
+            <input name="barcode" type="text" inputMode="numeric" maxLength={80} defaultValue={product?.barcode ?? ""} disabled={busy} />
           </label>
           <label className="product-field-full">
             Descrição
-            <textarea name="description" maxLength={1000} rows={3} disabled={busy} />
+            <textarea name="description" maxLength={1000} rows={3} defaultValue={product?.description ?? ""} disabled={busy} />
           </label>
         </div>
       </section>
@@ -156,7 +177,7 @@ export function NewProductForm({
         <div className="product-form-grid product-form-grid-commercial">
           <label>
             <span>Unidade <span className="required-mark">*</span></span>
-            <select name="unit" defaultValue="UN" required disabled={busy}>
+            <select name="unit" defaultValue={product?.unit ?? "UN"} required disabled={busy}>
               {unitOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -164,82 +185,94 @@ export function NewProductForm({
           </label>
           <label>
             <span>Unidades por embalagem <span className="required-mark">*</span></span>
-            <input name="unitsPerPackage" type="number" min="0.001" step="0.001" defaultValue="1" required disabled={busy} />
+            <input name="unitsPerPackage" type="number" min="0.001" step="0.001" defaultValue={product?.unitsPerPackage ?? 1} required disabled={busy} />
           </label>
           <label>
             <span>Preço de custo <span className="required-mark">*</span></span>
-            <div className="product-money-field"><span>R$</span><input name="costPrice" type="number" min="0" step="0.01" defaultValue="0" required disabled={busy} /></div>
+            <div className="product-money-field"><span>R$</span><input name="costPrice" type="number" min="0" step="0.01" defaultValue={product?.costPrice ?? 0} required disabled={busy} /></div>
           </label>
           <label>
             <span>Preço de venda <span className="required-mark">*</span></span>
-            <div className="product-money-field"><span>R$</span><input name="salePrice" type="number" min="0" step="0.01" defaultValue="0" required disabled={busy} /></div>
+            <div className="product-money-field"><span>R$</span><input name="salePrice" type="number" min="0" step="0.01" defaultValue={product?.salePrice ?? 0} required disabled={busy} /></div>
           </label>
           <label>
             Estoque mínimo
-            <input name="minimumStock" type="number" min="0" step="0.001" defaultValue="0" disabled={busy} />
+            <input name="minimumStock" type="number" min="0" step="0.001" defaultValue={product?.minimumStock ?? 0} disabled={busy} />
           </label>
         </div>
       </section>
 
-      <section className="product-form-section product-stock-section">
-        <div className="product-form-section-title">
-          <span className="panel-kicker">Estoque inicial</span>
-          <h3>Quantidade disponível</h3>
-          <p>Informe quantos itens já existem e em qual local estão armazenados.</p>
-        </div>
-        {locations.length ? (
-          <div className="product-stock-grid">
-            <label>
-              Local de estoque
-              <select
-                name="locationId"
-                defaultValue={locations[0]?.id ?? ""}
-                disabled={busy || Number(initialQuantity) === 0}
-              >
-                {locations.map((location) => (
-                  <option key={location.id} value={location.id}>{location.name}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Quantidade inicial
-              <input
-                name="initialQuantity"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                step="1"
-                value={initialQuantity}
-                onChange={(event) => {
-                  setInitialQuantity(event.target.value);
-                  setFeedback(null);
-                }}
-                required
-                disabled={busy}
-              />
-            </label>
+      {product ? (
+        <section className="product-form-section product-stock-section product-stock-readonly">
+          <div className="product-form-section-title">
+            <span className="panel-kicker">Estoque atual</span>
+            <h3>{formatNumber(product.stock)} {product.unit}</h3>
+            <p>O saldo não é sobrescrito na edição; ajustes devem gerar uma movimentação de estoque.</p>
           </div>
-        ) : (
-          <div className="product-stock-warning">
-            Nenhum local de estoque ativo. O produto será cadastrado sem saldo inicial.
+        </section>
+      ) : (
+        <section className="product-form-section product-stock-section">
+          <div className="product-form-section-title">
+            <span className="panel-kicker">Estoque inicial</span>
+            <h3>Quantidade disponível</h3>
+            <p>Informe quantos itens já existem e em qual local estão armazenados.</p>
           </div>
-        )}
-      </section>
+          {locations.length ? (
+            <div className="product-stock-grid">
+              <label>
+                Local de estoque
+                <select
+                  name="locationId"
+                  defaultValue={locations[0]?.id ?? ""}
+                  disabled={busy || Number(initialQuantity) === 0}
+                >
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>{location.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Quantidade inicial
+                <input
+                  name="initialQuantity"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={initialQuantity}
+                  onChange={(event) => {
+                    setInitialQuantity(event.target.value);
+                    setFeedback(null);
+                  }}
+                  required
+                  disabled={busy}
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="product-stock-warning">
+              Nenhum local de estoque ativo. O produto será cadastrado sem saldo inicial.
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="product-form-footer">
         <div className="product-options">
           <label className="product-check">
-            <input name="active" type="checkbox" defaultChecked disabled={busy} />
+            <input name="active" type="checkbox" defaultChecked={product?.active ?? true} disabled={busy} />
             <span><strong>Produto ativo</strong><small>Disponível para vendas e movimentações.</small></span>
           </label>
           <label className="product-check">
-            <input name="isReturnable" type="checkbox" disabled={busy} />
+            <input name="isReturnable" type="checkbox" defaultChecked={product?.isReturnable ?? false} disabled={busy} />
             <span><strong>Embalagem retornável</strong><small>Identifica itens com controle de vasilhame.</small></span>
           </label>
         </div>
         <button className="button button-primary product-submit" type="submit" disabled={busy}>
           {busy ? <LoaderCircle className="feedback-spinner" size={17} /> : <Check size={17} />}
-          {busy ? "Cadastrando..." : "Cadastrar produto"}
+          {busy
+            ? product ? "Salvando..." : "Cadastrando..."
+            : product ? "Salvar alterações" : "Cadastrar produto"}
         </button>
       </div>
     </form>

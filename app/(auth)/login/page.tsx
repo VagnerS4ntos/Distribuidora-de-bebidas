@@ -6,7 +6,7 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-hero">
-        <div className="auth-brand"><span><GlassWater size={22} /></span><strong>brava</strong></div>
+        <div className="auth-brand"><span><GlassWater size={22} /></span><strong>Santo Gole</strong></div>
         <div><span className="eyebrow">Gestão que acompanha o seu ritmo</span><h1>Mais controle, menos improviso.</h1><p>Vendas, estoque, compras e financeiro integrados para a sua distribuidora de bebidas.</p></div>
         <div className="auth-feature"><LockKeyhole size={17} /> Seus dados são isolados por organização e protegidos por regras de acesso.</div>
       </section>

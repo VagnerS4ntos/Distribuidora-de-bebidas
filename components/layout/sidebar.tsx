@@ -6,7 +6,6 @@ import {
   BarChart3,
   Box,
   ClipboardList,
-  FileText,
   LayoutDashboard,
   PackageOpen,
   ShoppingBag,
@@ -40,7 +39,13 @@ function NavPendingIndicator({ isCurrent }: { isCurrent: boolean }) {
   ) : null;
 }
 
-function NavItems({ items, pathname }: { items: typeof mainItems; pathname: string }) {
+function NavItems({
+  items,
+  pathname,
+}: {
+  items: typeof mainItems;
+  pathname: string;
+}) {
   return items.map(({ href, label, icon: Icon }) => (
     <Link
       className={`side-link${pathname === href ? " side-link-active" : ""}`}
@@ -61,7 +66,9 @@ export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-head"><BrandMark /></div>
+      <div className="sidebar-head">
+        <BrandMark />
+      </div>
       <nav className="side-nav" aria-label="Navegação principal">
         <p className="side-section-label">Operação</p>
         <NavItems items={mainItems} pathname={pathname} />
@@ -74,10 +81,6 @@ export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
           />
         )}
       </nav>
-      <div className="sidebar-footer">
-        <FileText size={16} />
-        <span>Dados protegidos por Supabase</span>
-      </div>
     </aside>
   );
 }
