@@ -26,3 +26,6 @@ e habilita seus saldos, movimentos, locais e produtos na publicação do Realtim
 
 A migration `20261024154621_enforce_integer_inventory_adjustments.sql` atualiza
 o ajuste manual para aceitar somente quantidades inteiras, em passos de uma unidade.
+
+A migration `20261024162649_enable_customers_realtime.sql` adiciona um índice
+para a listagem por status e publica `public.customers` no Realtime.
