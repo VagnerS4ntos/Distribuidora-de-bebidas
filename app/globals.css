@@ -2352,6 +2352,12 @@ body:has(.sale-modal-backdrop) {
   color: var(--brand);
   background: var(--brand-pale);
 }
+.supplier-notes-field {
+  grid-column: span 2;
+}
+.supplier-contact {
+  min-width: 220px;
+}
 .page-loading {
   display: grid;
   gap: 24px;
@@ -2715,7 +2721,8 @@ body:has(.sale-modal-backdrop) {
     grid-template-columns: 1fr;
   }
   .customer-name-field,
-  .customer-notes-field {
+  .customer-notes-field,
+  .supplier-notes-field {
     grid-column: auto;
   }
   .customer-form-footer {

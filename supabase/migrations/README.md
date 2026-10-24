@@ -29,3 +29,6 @@ o ajuste manual para aceitar somente quantidades inteiras, em passos de uma unid
 
 A migration `20261024162649_enable_customers_realtime.sql` adiciona um índice
 para a listagem por status e publica `public.customers` no Realtime.
+
+A migration `20261024163845_enable_suppliers_realtime.sql` adiciona um índice
+para a listagem por status e publica `public.suppliers` no Realtime.
