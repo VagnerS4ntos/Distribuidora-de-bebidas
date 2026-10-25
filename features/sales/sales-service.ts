@@ -98,7 +98,14 @@ export async function getSalesPageData({
     .order("id", { ascending: false })
     .range(historyFrom, historyTo);
 
-  const [customersResult, productsResult, locationsResult, recentResult, todayResult] =
+  const [
+    customersResult,
+    productsResult,
+    locationsResult,
+    recentResult,
+    todayResult,
+    openCashSessionResult,
+  ] =
     await Promise.all([
       supabase
         .from("customers")
@@ -128,6 +135,13 @@ export async function getSalesPageData({
         .eq("status", "completed")
         .gte("sold_at", todayStart)
         .lt("sold_at", tomorrowStart),
+      supabase
+        .from("cash_sessions")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .eq("status", "open")
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const firstError = [
@@ -136,6 +150,7 @@ export async function getSalesPageData({
     locationsResult.error,
     recentResult.error,
     todayResult.error,
+    openCashSessionResult.error,
   ].find(Boolean);
   if (firstError) throw firstError;
 
@@ -258,6 +273,8 @@ export async function getSalesPageData({
       1,
       Math.ceil(historyTotal / SALES_HISTORY_PAGE_SIZE),
     ),
+    cashOpen: Boolean(openCashSessionResult.data),
+    canManageCash: hasPermission(currentMember.role, "cash.manage"),
     canManageReturns: hasPermission(currentMember.role, "sales.manage_returns"),
   };
 }

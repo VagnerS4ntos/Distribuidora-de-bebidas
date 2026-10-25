@@ -5,6 +5,7 @@ import {
   ChevronRight,
   CircleAlert,
   List,
+  LockKeyhole,
   PackageOpen,
   Plus,
   ShoppingBag,
@@ -80,6 +81,12 @@ export default async function SalesPage({
         </div>
         {showNewSale ? (
           <Link href="/vendas" className="button button-secondary"><X size={17} />Cancelar</Link>
+        ) : !data.cashOpen ? (
+          data.canManageCash ? (
+            <Link href="/caixa" className="button button-secondary"><LockKeyhole size={17} />Abrir caixa</Link>
+          ) : (
+            <span className="button button-secondary is-disabled" aria-disabled="true"><LockKeyhole size={17} />Caixa fechado</span>
+          )
         ) : (
           <Link href="/vendas?nova=1" className="button button-primary"><Plus size={17} />Nova venda</Link>
         )}
@@ -91,6 +98,17 @@ export default async function SalesPage({
         </div>
       )}
 
+      {!data.cashOpen && (
+        <div className="sale-feedback sale-feedback-error" role="alert">
+          <LockKeyhole size={16} />
+          <span>
+            O caixa está fechado. {data.canManageCash
+              ? "Abra um novo expediente antes de registrar vendas."
+              : "Solicite a um proprietário ou gerente que abra o caixa antes de registrar vendas."}
+          </span>
+        </div>
+      )}
+
       <section className="module-stat-grid">
         <article className="module-stat"><span>Vendas hoje</span><strong>{formatCurrency(data.todayTotal)}</strong><small>{formatNumber(data.todayCount)} venda(s) concluída(s)</small></article>
         <article className="module-stat"><span>Itens vendidos hoje</span><strong>{formatNumber(data.todayItems)}</strong><small>Unidades baixadas do estoque</small></article>
@@ -99,13 +117,20 @@ export default async function SalesPage({
 
       {showNewSale && (
         <article className="panel sale-form-panel">
-          {!data.locations.length || !data.products.length ? (
+          {!data.cashOpen ? (
+            <div className="sale-prerequisite-warning">
+              <LockKeyhole size={18} />
+              <span>Não é possível registrar uma venda enquanto o caixa estiver fechado.</span>
+            </div>
+          ) : !data.locations.length || !data.products.length ? (
             <div className="sale-prerequisite-warning">
               <CircleAlert size={18} />
               <span>{!data.locations.length ? "Cadastre um local de estoque antes de vender." : "Cadastre produtos ativos antes de vender."}</span>
             </div>
           ) : null}
-          <NewSaleForm customers={data.customers} locations={data.locations} products={data.products} />
+          {data.cashOpen && (
+            <NewSaleForm customers={data.customers} locations={data.locations} products={data.products} />
+          )}
         </article>
       )}
 
@@ -130,6 +155,7 @@ export default async function SalesPage({
           <SalesHistoryTable
             sales={data.recentSales}
             canManageReturns={data.canManageReturns}
+            cashOpen={data.cashOpen}
           />
         ) : (
           <EmptyState

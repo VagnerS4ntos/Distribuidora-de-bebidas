@@ -4,6 +4,7 @@ import {
   ChevronRight,
   CircleAlert,
   Landmark,
+  LockKeyhole,
   Plus,
   WalletCards,
   X,
@@ -109,6 +110,13 @@ export default async function FinancePage({
         </div>
       )}
 
+      {data.canManageFinance && !data.cashOpen && (
+        <div className="sale-feedback sale-feedback-error" role="status">
+          <LockKeyhole size={16} />
+          O caixa está fechado. Lançamentos pendentes e pagamentos sem dinheiro continuam disponíveis; movimentações em dinheiro exigem um caixa aberto.
+        </div>
+      )}
+
       {showNewEntry && (
         <article className="panel customer-form-panel">
           <NewFinancialEntryForm
@@ -116,6 +124,7 @@ export default async function FinancePage({
             customers={data.customers}
             suppliers={data.suppliers}
             returnHref={returnHref}
+            cashOpen={data.cashOpen}
           />
         </article>
       )}
@@ -172,6 +181,7 @@ export default async function FinancePage({
           <FinancialEntriesTable
             entries={data.entries}
             canManageFinance={data.canManageFinance}
+            cashOpen={data.cashOpen}
           />
         ) : (
           <EmptyState

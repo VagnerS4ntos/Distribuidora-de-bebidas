@@ -9,6 +9,7 @@ import {
   CircleAlert,
   History,
   LoaderCircle,
+  LockKeyhole,
   PackageOpen,
   ReceiptText,
   RotateCcw,
@@ -53,9 +54,11 @@ function formatSaleDate(value: string) {
 export function SalesHistoryTable({
   sales,
   canManageReturns,
+  cashOpen,
 }: {
   sales: RecentSale[];
   canManageReturns: boolean;
+  cashOpen: boolean;
 }) {
   const router = useRouter();
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
@@ -71,6 +74,9 @@ export function SalesHistoryTable({
   const openerRef = useRef<HTMLElement | null>(null);
   const requestIdRef = useRef(0);
   const observedSaleRevisionRef = useRef<string | null>(null);
+  const cashReturnBlocked = Boolean(
+    details?.payments.some((payment) => payment.method === "cash") && !cashOpen,
+  );
 
   const closeModal = () => {
     requestIdRef.current += 1;
@@ -120,6 +126,13 @@ export function SalesHistoryTable({
   const submitPostSale = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!details || !actionMode) return;
+    if (cashReturnBlocked) {
+      setActionFeedback({
+        message: "Abra o caixa antes de estornar uma venda recebida em dinheiro.",
+        success: false,
+      });
+      return;
+    }
     const items = details.items
       .map((item) => ({
         saleItemId: item.id,
@@ -346,16 +359,23 @@ export function SalesHistoryTable({
                   </div>
                   <div>
                     {details.items.some((item) => item.returnableQuantity > 0) && (
-                      <button className="button button-secondary" type="button" onClick={() => openAction("return")}>
+                      <button className="button button-secondary" type="button" onClick={() => openAction("return")} disabled={cashReturnBlocked}>
                         <RotateCcw size={16} />Registrar devolução
                       </button>
                     )}
                     {details.canCancel && (
-                      <button className="button sale-cancel-button" type="button" onClick={() => openAction("cancellation")}>
+                      <button className="button sale-cancel-button" type="button" onClick={() => openAction("cancellation")} disabled={cashReturnBlocked}>
                         <Ban size={16} />Cancelar venda
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+
+              {canManageReturns && details.status === "completed" && cashReturnBlocked && !actionMode && (
+                <div className="sale-feedback sale-feedback-error" role="alert">
+                  <LockKeyhole size={16} />
+                  Abra o caixa antes de cancelar ou devolver uma venda recebida em dinheiro.
                 </div>
               )}
 
@@ -371,6 +391,13 @@ export function SalesHistoryTable({
                       <p>{actionMode === "cancellation" ? "Todos os itens voltarão ao estoque e o valor integral será estornado." : "Informe somente as quantidades que o cliente está devolvendo."}</p>
                     </div>
                   </div>
+
+                  {cashReturnBlocked && (
+                    <div className="sale-feedback sale-feedback-error" role="alert">
+                      <LockKeyhole size={16} />
+                      O caixa foi fechado. Reabra-o antes de concluir o estorno em dinheiro.
+                    </div>
+                  )}
 
                   {actionMode === "return" && (
                     <div className="sale-return-item-fields">
@@ -418,7 +445,7 @@ export function SalesHistoryTable({
 
                   <div className="sale-return-form-actions">
                     <button className="button button-secondary" type="button" onClick={() => setActionMode(null)} disabled={actionBusy}>Voltar</button>
-                    <button className={`button ${actionMode === "cancellation" ? "sale-cancel-button" : "button-primary"}`} type="submit" disabled={actionBusy}>
+                    <button className={`button ${actionMode === "cancellation" ? "sale-cancel-button" : "button-primary"}`} type="submit" disabled={actionBusy || cashReturnBlocked}>
                       {actionBusy ? <LoaderCircle className="feedback-spinner" size={16} /> : actionMode === "cancellation" ? <Ban size={16} /> : <RotateCcw size={16} />}
                       {actionBusy ? "Processando..." : actionMode === "cancellation" ? "Confirmar cancelamento" : "Confirmar devolução"}
                     </button>

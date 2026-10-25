@@ -11,6 +11,7 @@ import {
   CreditCard,
   Landmark,
   LoaderCircle,
+  LockKeyhole,
   ReceiptText,
   TriangleAlert,
   X,
@@ -75,9 +76,11 @@ function sourceLabel(entry: FinancialListItem) {
 export function FinancialEntriesTable({
   entries,
   canManageFinance,
+  cashOpen,
 }: {
   entries: FinancialListItem[];
   canManageFinance: boolean;
+  cashOpen: boolean;
 }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -91,6 +94,7 @@ export function FinancialEntriesTable({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const selectedEntry = entries.find((entry) => entry.id === selectedId) ?? null;
+  const cashPaymentBlocked = paymentMethod === "cash" && !cashOpen;
 
   const closeModal = () => {
     setSelectedId(null);
@@ -112,6 +116,10 @@ export function FinancialEntriesTable({
 
   async function submitPayment() {
     if (!selectedEntry) return;
+    if (cashPaymentBlocked) {
+      setFeedback("Abra o caixa ou escolha outra forma de pagamento.");
+      return;
+    }
     const paymentAmount = Number(amount);
     if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
       setFeedback("Informe um valor de pagamento válido.");
@@ -276,6 +284,12 @@ export function FinancialEntriesTable({
                   <h3>{selectedEntry.entryType === "income" ? "Registrar recebimento" : "Registrar pagamento"}</h3>
                 </div>
               </div>
+              {cashPaymentBlocked && (
+                <div className="sale-feedback sale-feedback-error" role="alert">
+                  <LockKeyhole size={16} />
+                  Abra o caixa ou escolha outra forma de pagamento.
+                </div>
+              )}
               <div className="financial-payment-fields">
                 <label>
                   <span>Valor <span className="required-mark">*</span></span>
@@ -299,7 +313,7 @@ export function FinancialEntriesTable({
                   Observações
                   <input type="text" maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} disabled={busy} />
                 </label>
-                <button className="button button-primary" type="button" onClick={() => void submitPayment()} disabled={busy}>
+                <button className="button button-primary" type="button" onClick={() => void submitPayment()} disabled={busy || cashPaymentBlocked}>
                   {busy ? <LoaderCircle className="feedback-spinner" size={16} /> : <Check size={16} />}
                   {busy ? "Registrando..." : "Confirmar pagamento"}
                 </button>

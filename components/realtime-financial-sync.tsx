@@ -33,6 +33,7 @@ export function RealtimeFinancialSync({ organizationId }: { organizationId: stri
         .on("postgres_changes", { event: "*", schema: "public", table: "financial_entries", filter }, scheduleRefresh)
         .on("postgres_changes", { event: "*", schema: "public", table: "financial_entry_payments", filter }, scheduleRefresh)
         .on("postgres_changes", { event: "*", schema: "public", table: "financial_categories", filter }, scheduleRefresh)
+        .on("postgres_changes", { event: "*", schema: "public", table: "cash_sessions", filter }, scheduleRefresh)
         .subscribe();
     };
 

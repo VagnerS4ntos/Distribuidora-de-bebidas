@@ -337,6 +337,29 @@ export async function createSale(
     return { success: false, message: "Seu perfil não tem permissão para registrar vendas." };
   }
 
+  const supabase = await createClient();
+  const { data: openCashSession, error: cashSessionError } = await supabase
+    .from("cash_sessions")
+    .select("id")
+    .eq("organization_id", currentMember.organizationId)
+    .eq("status", "open")
+    .limit(1)
+    .maybeSingle();
+
+  if (cashSessionError) {
+    return {
+      success: false,
+      message: "Não foi possível consultar o caixa. Tente novamente.",
+    };
+  }
+
+  if (!openCashSession) {
+    return {
+      success: false,
+      message: "Abra o caixa antes de registrar uma venda.",
+    };
+  }
+
   if (!uuidPattern.test(input.locationId)) {
     return { success: false, message: "Selecione o local de estoque." };
   }
@@ -377,7 +400,6 @@ export async function createSale(
     return { success: false, message: "As observações devem ter no máximo 1.000 caracteres." };
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_completed_sale", {
     p_organization_id: currentMember.organizationId,
     p_customer_id: input.customerId,
@@ -408,6 +430,7 @@ export async function createSale(
       "Estoque insuficiente",
       "O desconto",
       "O total da venda",
+      "Abra o caixa",
     ].find((prefix) => error.message.startsWith(prefix));
 
     return {
@@ -424,6 +447,9 @@ export async function createSale(
   revalidatePath("/produtos");
   revalidatePath("/estoques");
   revalidatePath("/dashboard");
+  revalidatePath("/financeiro");
+  revalidatePath("/caixa");
+  revalidatePath("/relatorios");
 
   return {
     success: true,

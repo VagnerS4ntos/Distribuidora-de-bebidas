@@ -6,6 +6,7 @@ import {
   BookOpenText,
   CalendarClock,
   CircleHelp,
+  FileText,
   PackagePlus,
   PackageSearch,
   ShoppingCart,
@@ -232,6 +233,18 @@ export function TopbarActions({
             </div>
             <p className="topbar-popover-intro">Acesse diretamente as tarefas mais comuns da Santo Gole.</p>
             <nav className="topbar-help-links" aria-label="Atalhos de ajuda">
+              <Link
+                href="/docs/manual-de-uso-santo-gole.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpenMenu(null)}
+              >
+                <FileText size={18} />
+                <span>
+                  <strong>Manual de uso</strong>
+                  <small>Abra o guia completo do sistema em uma nova guia.</small>
+                </span>
+              </Link>
               <Link href="/vendas?nova=1" onClick={() => setOpenMenu(null)}><ShoppingCart size={18} /><span><strong>Registrar uma venda</strong><small>Selecione os produtos e conclua o pedido.</small></span></Link>
               {hasPermission(role, "catalog.manage") && <Link href="/produtos?novo=1" onClick={() => setOpenMenu(null)}><PackagePlus size={18} /><span><strong>Cadastrar um produto</strong><small>Inclua preços e o estoque inicial.</small></span></Link>}
               {hasPermission(role, "purchases.manage") && <Link href="/compras?nova=1" onClick={() => setOpenMenu(null)}><BookOpenText size={18} /><span><strong>Registrar uma compra</strong><small>Crie o pedido e acompanhe o recebimento.</small></span></Link>}

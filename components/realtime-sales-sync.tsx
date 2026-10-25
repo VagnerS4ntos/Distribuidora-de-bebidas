@@ -75,6 +75,16 @@ export function RealtimeSalesSync({ organizationId }: { organizationId: string }
           },
           scheduleRefresh,
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "cash_sessions",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          scheduleRefresh,
+        )
         .subscribe();
     };
 

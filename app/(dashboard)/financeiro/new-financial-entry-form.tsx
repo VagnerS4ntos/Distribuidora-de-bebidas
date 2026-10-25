@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, CircleDollarSign, LoaderCircle } from "lucide-react";
+import { Check, CircleDollarSign, LoaderCircle, LockKeyhole } from "lucide-react";
 import type {
   FinancialCategoryOption,
   FinancialContactOption,
@@ -28,15 +28,18 @@ export function NewFinancialEntryForm({
   customers,
   suppliers,
   returnHref,
+  cashOpen,
 }: {
   categories: FinancialCategoryOption[];
   customers: FinancialContactOption[];
   suppliers: FinancialContactOption[];
   returnHref: string;
+  cashOpen: boolean;
 }) {
   const router = useRouter();
   const [entryType, setEntryType] = useState<FinancialEntryType>("expense");
   const [isPaid, setIsPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("pix");
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const filteredCategories = useMemo(
@@ -44,6 +47,7 @@ export function NewFinancialEntryForm({
     [categories, entryType],
   );
   const counterparties = entryType === "income" ? customers : suppliers;
+  const cashPaymentBlocked = isPaid && paymentMethod === "cash" && !cashOpen;
 
   useEffect(() => {
     document.getElementById("financial-entry-form")?.scrollIntoView({
@@ -181,7 +185,13 @@ export function NewFinancialEntryForm({
         {isPaid && (
           <label>
             <span>Forma de pagamento <span className="required-mark">*</span></span>
-            <select name="paymentMethod" defaultValue="pix" required disabled={busy}>
+            <select
+              name="paymentMethod"
+              value={paymentMethod}
+              onChange={(event) => setPaymentMethod(event.target.value)}
+              required
+              disabled={busy}
+            >
               {paymentMethods.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
@@ -194,6 +204,13 @@ export function NewFinancialEntryForm({
           <textarea name="notes" maxLength={1000} rows={3} placeholder="Informações adicionais do lançamento" disabled={busy} />
         </label>
       </div>
+
+      {cashPaymentBlocked && (
+        <div className="sale-feedback sale-feedback-error" role="alert">
+          <LockKeyhole size={16} />
+          Abra o caixa ou escolha outra forma de pagamento.
+        </div>
+      )}
 
       <div className="customer-form-footer">
         <label className="customer-active-check financial-paid-check">
@@ -210,7 +227,7 @@ export function NewFinancialEntryForm({
           </span>
         </label>
 
-        <button className="button button-primary" type="submit" disabled={busy}>
+        <button className="button button-primary" type="submit" disabled={busy || cashPaymentBlocked}>
           {busy ? <LoaderCircle className="feedback-spinner" size={17} /> : <Check size={17} />}
           {busy ? "Registrando..." : "Registrar lançamento"}
         </button>

@@ -149,6 +149,7 @@ export async function getFinancialPageData({
     categoriesResult,
     customersResult,
     suppliersResult,
+    openCashSessionResult,
   ] = await Promise.all([
     getEntriesRange(from, to),
     supabase
@@ -180,6 +181,13 @@ export async function getFinancialPageData({
       .eq("organization_id", organizationId)
       .eq("active", true)
       .order("name"),
+    supabase
+      .from("cash_sessions")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("status", "open")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const firstError = [
@@ -189,6 +197,7 @@ export async function getFinancialPageData({
     categoriesResult.error,
     customersResult.error,
     suppliersResult.error,
+    openCashSessionResult.error,
   ].find(Boolean);
   if (firstError) throw firstError;
 
@@ -287,6 +296,7 @@ export async function getFinancialPageData({
     organizationId,
     organizationName: member.organizationName,
     canManageFinance: hasPermission(member.role, "finance.manage"),
+    cashOpen: Boolean(openCashSessionResult.data),
     entries,
     categories: (categoriesResult.data ?? []).map((category) => ({
       id: category.id,

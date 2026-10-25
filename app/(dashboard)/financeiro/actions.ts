@@ -71,6 +71,8 @@ function revalidateFinancialPaths() {
   revalidatePath("/dashboard");
   revalidatePath("/vendas");
   revalidatePath("/compras");
+  revalidatePath("/caixa");
+  revalidatePath("/relatorios");
 }
 
 function financialErrorMessage(error: { code?: string; message: string }, fallback: string) {
@@ -90,6 +92,8 @@ function financialErrorMessage(error: { code?: string; message: string }, fallba
     "Este lançamento",
     "O pagamento",
     "A data do pagamento",
+    "Abra o caixa",
+    "O pagamento em dinheiro",
   ].find((prefix) => error.message.startsWith(prefix));
 
   if (knownPrefix) return error.message;
@@ -97,6 +101,26 @@ function financialErrorMessage(error: { code?: string; message: string }, fallba
     return "Execute a migration do Financeiro no Supabase antes de usar esta ação.";
   }
   return fallback;
+}
+
+async function cashPaymentAvailabilityError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  paymentMethod: string,
+) {
+  if (paymentMethod !== "cash") return null;
+
+  const { data, error } = await supabase
+    .from("cash_sessions")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("status", "open")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return "Não foi possível consultar o caixa. Tente novamente.";
+  if (!data) return "Abra o caixa antes de registrar uma movimentação em dinheiro.";
+  return null;
 }
 
 export async function createFinancialEntry(
@@ -145,6 +169,15 @@ export async function createFinancialEntry(
   }
 
   const supabase = await createClient();
+  const cashError = input.isPaid
+    ? await cashPaymentAvailabilityError(
+        supabase,
+        member.organizationId,
+        input.paymentMethod,
+      )
+    : null;
+  if (cashError) return { success: false, message: cashError };
+
   const counterpartyId = optionalUuid(input.counterpartyId);
   const { data, error } = await supabase.rpc("create_financial_entry", {
     p_organization_id: member.organizationId,
@@ -208,6 +241,13 @@ export async function recordFinancialPayment(
   }
 
   const supabase = await createClient();
+  const cashError = await cashPaymentAvailabilityError(
+    supabase,
+    member.organizationId,
+    input.paymentMethod,
+  );
+  if (cashError) return { success: false, message: cashError };
+
   const { data, error } = await supabase.rpc("record_financial_payment", {
     p_organization_id: member.organizationId,
     p_financial_entry_id: input.entryId,

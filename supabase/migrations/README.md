@@ -73,3 +73,20 @@ A migration `20261025200000_implement_audit_history.sql` transforma `audit_logs`
 em uma trilha imutável visível somente para proprietários e gerentes. Ela cria
 índices, captura automaticamente alterações de cadastros e financeiro por
 triggers e publica novos eventos no Realtime da tela **Auditoria**.
+
+A migration `20261025203000_enforce_open_cash_for_sales.sql` impede que uma venda
+seja concluída sem um caixa aberto na organização. A validação é feita por trigger
+no banco, inclusive para tentativas fora da interface, e usa bloqueio compartilhado
+para evitar que o caixa seja fechado durante a gravação da venda.
+
+A migration `20261025210000_enforce_open_cash_for_cash_payments.sql` exige caixa
+aberto para recebimentos de vendas em dinheiro e para pagamentos ou recebimentos
+financeiros em espécie. Em vez de ignorar a movimentação quando não há expediente,
+os triggers agora cancelam toda a transação com uma mensagem clara.
+
+A migration `20261025231524_lock_direct_transactional_writes.sql` remove dos papéis
+`anon` e `authenticated` todos os privilégios diretos de escrita nas tabelas de
+movimentação. A leitura autenticada continua protegida por RLS, enquanto vendas,
+estoque, compras, financeiro, caixa e devoluções só podem ser alterados pelas RPCs
+validadas. A própria migration interrompe e reverte a aplicação se detectar uma
+permissão aberta ou uma RPC obrigatória ausente.
