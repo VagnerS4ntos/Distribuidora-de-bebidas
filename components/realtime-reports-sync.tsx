@@ -8,6 +8,8 @@ const reportTables = [
   "sales",
   "sale_items",
   "sale_payments",
+  "sale_returns",
+  "sale_return_items",
   "financial_entries",
   "financial_entry_payments",
   "purchase_receipts",

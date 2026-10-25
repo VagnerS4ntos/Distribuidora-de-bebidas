@@ -57,3 +57,8 @@ A migration `20261025120000_implement_cash_register_management.sql` implementa o
 caixa diário com abertura, entradas, saídas, sangria, suprimento e fechamento
 auditável. Ela integra vendas e pagamentos financeiros em dinheiro ao caixa aberto,
 protege as operações por funções transacionais e habilita as tabelas no Realtime.
+
+A migration `20261025160000_implement_sale_cancellations_and_returns.sql` cria o
+histórico de cancelamentos e devoluções parciais ou totais. A operação recompõe
+o estoque, registra o estorno financeiro, movimenta o caixa quando o pagamento
+foi em dinheiro, grava auditoria e publica os novos registros no Realtime.

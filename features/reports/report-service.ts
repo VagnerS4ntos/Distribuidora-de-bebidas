@@ -30,6 +30,15 @@ type RawSale = {
     payment_method: string;
     status: string;
   }>;
+  sale_returns: Array<{
+    refund_amount: number | string;
+    payment_method: string;
+    sale_return_items: Array<{
+      product_id: string;
+      quantity: number | string;
+      total_refund: number | string;
+    }>;
+  }>;
 };
 
 type RawFinancialPayment = {
@@ -131,6 +140,17 @@ function formatShortDateKey(value: string) {
   return `${day}/${month}/${year.slice(2)}`;
 }
 
+function saleRefundAmount(sale: RawSale) {
+  return (sale.sale_returns ?? []).reduce(
+    (total, saleReturn) => total + asNumber(saleReturn.refund_amount),
+    0,
+  );
+}
+
+function saleNetRevenue(sale: RawSale) {
+  return Math.max(0, asNumber(sale.total) - saleRefundAmount(sale));
+}
+
 function buildTrend(sales: RawSale[], from: string, to: string): ReportTrendPoint[] {
   const rangeDays = daysBetween(from, to);
   const mode = rangeDays <= 31 ? "day" : rangeDays <= 120 ? "week" : "month";
@@ -175,7 +195,7 @@ function buildTrend(sales: RawSale[], from: string, to: string): ReportTrendPoin
     const bucket = buckets.get(bucketKey);
     if (bucket) {
       bucket.sales += 1;
-      bucket.revenue += asNumber(sale.total);
+      bucket.revenue += saleNetRevenue(sale);
     }
   }
 
@@ -205,7 +225,7 @@ export async function getReportsPageData({
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("sales")
-      .select("id, sold_at, total, sale_items(product_id, quantity, unit_cost, total, products(name, unit)), sale_payments(amount, payment_method, status)")
+      .select("id, sold_at, total, sale_items(product_id, quantity, unit_cost, total, products(name, unit)), sale_payments(amount, payment_method, status), sale_returns(refund_amount, payment_method, sale_return_items(product_id, quantity, total_refund))")
       .eq("organization_id", organizationId)
       .eq("status", "completed")
       .gte("sold_at", startIso)
@@ -263,10 +283,37 @@ export async function getReportsPageData({
   const paymentMap = new Map<string, number>();
 
   for (const sale of sales) {
-    revenue += asNumber(sale.total);
+    revenue += saleNetRevenue(sale);
+    const returnedQuantityByProduct = new Map<string, number>();
+    const returnedValueByProduct = new Map<string, number>();
+    for (const saleReturn of sale.sale_returns ?? []) {
+      for (const returnedItem of saleReturn.sale_return_items ?? []) {
+        returnedQuantityByProduct.set(
+          returnedItem.product_id,
+          (returnedQuantityByProduct.get(returnedItem.product_id) ?? 0) + asNumber(returnedItem.quantity),
+        );
+        returnedValueByProduct.set(
+          returnedItem.product_id,
+          (returnedValueByProduct.get(returnedItem.product_id) ?? 0) + asNumber(returnedItem.total_refund),
+        );
+      }
+    }
+    const saleItemsGross = (sale.sale_items ?? []).reduce(
+      (total, item) => total + asNumber(item.total),
+      0,
+    );
     for (const item of sale.sale_items ?? []) {
-      const quantity = asNumber(item.quantity);
-      const itemRevenue = asNumber(item.total);
+      const quantity = Math.max(
+        0,
+        asNumber(item.quantity) - (returnedQuantityByProduct.get(item.product_id) ?? 0),
+      );
+      const itemRevenueBeforeReturns = saleItemsGross > 0
+        ? asNumber(sale.total) * (asNumber(item.total) / saleItemsGross)
+        : 0;
+      const itemRevenue = Math.max(
+        0,
+        itemRevenueBeforeReturns - (returnedValueByProduct.get(item.product_id) ?? 0),
+      );
       unitsSold += quantity;
       cost += quantity * asNumber(item.unit_cost);
       const current = productMap.get(item.product_id) ?? {
@@ -285,6 +332,12 @@ export async function getReportsPageData({
       paymentMap.set(
         payment.payment_method,
         (paymentMap.get(payment.payment_method) ?? 0) + asNumber(payment.amount),
+      );
+    }
+    for (const saleReturn of sale.sale_returns ?? []) {
+      paymentMap.set(
+        saleReturn.payment_method,
+        (paymentMap.get(saleReturn.payment_method) ?? 0) - asNumber(saleReturn.refund_amount),
       );
     }
   }
@@ -327,6 +380,7 @@ export async function getReportsPageData({
 
   const paymentTotal = [...paymentMap.values()].reduce((totalValue, value) => totalValue + value, 0);
   const paymentMethods: ReportPaymentMethod[] = [...paymentMap.entries()]
+    .filter(([, amount]) => amount > 0)
     .map(([method, amount]) => ({
       method,
       amount,

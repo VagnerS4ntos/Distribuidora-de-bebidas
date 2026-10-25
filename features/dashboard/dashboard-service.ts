@@ -114,13 +114,13 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     const [todaySales, monthSales, products, receivables, recentSales] = await Promise.all([
       supabase
         .from("sales")
-        .select("id, total")
+        .select("id, total, sale_returns(refund_amount)")
         .eq("organization_id", organizationId)
         .eq("status", "completed")
         .gte("sold_at", dayStart.toISOString()),
       supabase
         .from("sales")
-        .select("total")
+        .select("total, sale_returns(refund_amount)")
         .eq("organization_id", organizationId)
         .eq("status", "completed")
         .gte("sold_at", monthStart.toISOString()),
@@ -137,7 +137,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         .in("status", ["pending", "partially_paid", "overdue"]),
       supabase
         .from("sales")
-        .select("id, total, sold_at, status, customers(name)")
+        .select("id, total, sold_at, status, customers(name), sale_returns(refund_amount)")
         .eq("organization_id", organizationId)
         .order("sold_at", { ascending: false })
         .limit(5),
@@ -163,12 +163,22 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       .filter((product) => product.stock <= product.minimum)
       .sort((a, b) => a.stock - b.stock);
 
+    const netSaleValue = (sale: {
+      total: number | string;
+      sale_returns: Array<{ refund_amount: number | string }>;
+    }) => Math.max(
+      0,
+      asNumber(sale.total) - (sale.sale_returns ?? []).reduce(
+        (total, saleReturn) => total + asNumber(saleReturn.refund_amount),
+        0,
+      ),
+    );
     const salesAmount = (todaySales.data ?? []).reduce(
-      (total, sale) => total + asNumber(sale.total),
+      (total, sale) => total + netSaleValue(sale),
       0,
     );
     const monthlyAmount = (monthSales.data ?? []).reduce(
-      (total, sale) => total + asNumber(sale.total),
+      (total, sale) => total + netSaleValue(sale),
       0,
     );
     const receivableAmount = (receivables.data ?? []).reduce(
@@ -195,7 +205,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         id: sale.id.slice(0, 8).toUpperCase(),
         customer:
           (sale.customers as { name?: string } | null)?.name ?? "Cliente balcão",
-        total: asNumber(sale.total),
+        total: netSaleValue(sale),
         soldAt: sale.sold_at
           ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
               new Date(sale.sold_at),

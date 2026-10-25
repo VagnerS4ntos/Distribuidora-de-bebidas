@@ -37,6 +37,21 @@ export type CreateSaleResult = {
   saleId?: string;
 };
 
+export type SaleReturnInput = {
+  saleId: string;
+  returnType: "cancellation" | "return";
+  reason: string;
+  items: Array<{ saleItemId: string; quantity: number }>;
+};
+
+export type SaleReturnResult = {
+  success: boolean;
+  message: string;
+  saleReturnId?: string;
+  status?: SaleDetails["status"];
+  refundAmount?: number;
+};
+
 function asNumber(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -71,9 +86,18 @@ export async function getSaleDetails(saleId: string): Promise<SaleDetailsResult>
         unit_price,
         discount,
         total,
-        products(name, brand, sku, unit)
+        products(name, brand, sku, unit),
+        sale_return_items(quantity)
       ),
-      sale_payments(payment_method, amount, status, paid_at)
+      sale_payments(payment_method, amount, status, paid_at),
+      sale_returns(
+        id,
+        return_type,
+        refund_amount,
+        reason,
+        created_at,
+        sale_return_items(quantity, total_refund, products(name, unit))
+      )
     `)
     .eq("organization_id", currentMember.organizationId)
     .eq("id", saleId)
@@ -104,6 +128,7 @@ export async function getSaleDetails(saleId: string): Promise<SaleDetailsResult>
       sku?: string | null;
       unit?: string;
     } | null;
+    sale_return_items: Array<{ quantity: number | string }>;
   }>;
   const payments = (sale.sale_payments ?? []) as Array<{
     payment_method: string;
@@ -111,6 +136,22 @@ export async function getSaleDetails(saleId: string): Promise<SaleDetailsResult>
     status: string;
     paid_at: string | null;
   }>;
+  const returns = (sale.sale_returns ?? []) as Array<{
+    id: string;
+    return_type: "cancellation" | "return";
+    refund_amount: number | string;
+    reason: string;
+    created_at: string;
+    sale_return_items: Array<{
+      quantity: number | string;
+      total_refund: number | string;
+      products: { name?: string; unit?: string } | null;
+    }>;
+  }>;
+  const refundedAmount = returns.reduce(
+    (total, saleReturn) => total + asNumber(saleReturn.refund_amount),
+    0,
+  );
 
   const details: SaleDetails = {
     id: sale.id,
@@ -122,26 +163,166 @@ export async function getSaleDetails(saleId: string): Promise<SaleDetailsResult>
     discount: asNumber(sale.discount),
     total: asNumber(sale.total),
     notes: sale.notes,
-    items: items.map((item) => ({
-      id: item.id,
-      product: item.products?.name ?? "Produto não encontrado",
-      brand: item.products?.brand ?? null,
-      sku: item.products?.sku ?? null,
-      unit: item.products?.unit ?? "UN",
-      quantity: asNumber(item.quantity),
-      unitPrice: asNumber(item.unit_price),
-      discount: asNumber(item.discount),
-      total: asNumber(item.total),
-    })),
+    items: items.map((item) => {
+      const quantity = asNumber(item.quantity);
+      const returnedQuantity = (item.sale_return_items ?? []).reduce(
+        (total, returnedItem) => total + asNumber(returnedItem.quantity),
+        0,
+      );
+      return {
+        id: item.id,
+        product: item.products?.name ?? "Produto não encontrado",
+        brand: item.products?.brand ?? null,
+        sku: item.products?.sku ?? null,
+        unit: item.products?.unit ?? "UN",
+        quantity,
+        unitPrice: asNumber(item.unit_price),
+        discount: asNumber(item.discount),
+        total: asNumber(item.total),
+        returnedQuantity,
+        returnableQuantity: Math.max(0, quantity - returnedQuantity),
+      };
+    }),
     payments: payments.map((payment) => ({
       method: payment.payment_method,
       amount: asNumber(payment.amount),
       status: payment.status,
       paidAt: payment.paid_at,
     })),
+    returns: returns
+      .map((saleReturn) => ({
+        id: saleReturn.id,
+        returnType: saleReturn.return_type,
+        refundAmount: asNumber(saleReturn.refund_amount),
+        reason: saleReturn.reason,
+        createdAt: saleReturn.created_at,
+        items: (saleReturn.sale_return_items ?? []).map((item) => ({
+          product: item.products?.name ?? "Produto não encontrado",
+          unit: item.products?.unit ?? "UN",
+          quantity: asNumber(item.quantity),
+          totalRefund: asNumber(item.total_refund),
+        })),
+      }))
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt)),
+    refundedAmount,
+    netTotal: Math.max(0, asNumber(sale.total) - refundedAmount),
+    canCancel: returns.length === 0 && sale.status === "completed",
   };
 
   return { success: true, data: details };
+}
+
+export async function processSaleReturn(
+  input: SaleReturnInput,
+): Promise<SaleReturnResult> {
+  const currentMember = await getCurrentMember();
+  if (!currentMember) {
+    return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  }
+  if (currentMember.role !== "owner" && currentMember.role !== "manager") {
+    return { success: false, message: "Seu perfil não tem permissão para esta operação." };
+  }
+  if (!uuidPattern.test(input.saleId)) {
+    return { success: false, message: "Venda inválida." };
+  }
+  if (input.returnType !== "cancellation" && input.returnType !== "return") {
+    return { success: false, message: "Selecione uma operação de pós-venda válida." };
+  }
+  if (input.reason.trim().length < 3 || input.reason.trim().length > 500) {
+    return { success: false, message: "Informe um motivo entre 3 e 500 caracteres." };
+  }
+  if (input.returnType === "return") {
+    if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 100) {
+      return { success: false, message: "Informe ao menos um item para devolução." };
+    }
+    const itemIds = new Set<string>();
+    for (const item of input.items) {
+      if (
+        !uuidPattern.test(item.saleItemId) ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0
+      ) {
+        return { success: false, message: "As quantidades devolvidas devem ser números inteiros maiores que zero." };
+      }
+      if (itemIds.has(item.saleItemId)) {
+        return { success: false, message: "O mesmo item não pode aparecer mais de uma vez." };
+      }
+      itemIds.add(item.saleItemId);
+    }
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("process_sale_return", {
+    p_organization_id: currentMember.organizationId,
+    p_sale_id: input.saleId,
+    p_return_type: input.returnType,
+    p_items: input.returnType === "return"
+      ? input.items.map((item) => ({
+          sale_item_id: item.saleItemId,
+          quantity: item.quantity,
+        }))
+      : [],
+    p_reason: input.reason.trim(),
+  });
+
+  if (error) {
+    const knownPrefix = [
+      "Sessão expirada",
+      "Seu perfil não tem permissão",
+      "Selecione uma operação",
+      "Informe um motivo",
+      "Venda não encontrada",
+      "Somente vendas concluídas",
+      "Uma venda com devolução anterior",
+      "Informe os itens",
+      "A devolução deve ter",
+      "O mesmo item",
+      "Não foi possível identificar",
+      "A venda possui baixas",
+      "Item ou quantidade",
+      "Um dos itens",
+      "As quantidades devolvidas",
+      "A quantidade devolvida",
+      "Não foi possível calcular",
+      "O valor total",
+      "Abra um caixa",
+      "O saldo do caixa",
+      "Saldo de estoque",
+    ].find((prefix) => error.message.startsWith(prefix));
+
+    return {
+      success: false,
+      message: knownPrefix
+        ? error.message
+        : error.code === "PGRST202"
+          ? "Execute a migration de cancelamentos e devoluções no Supabase."
+          : "Não foi possível concluir a operação. Tente novamente.",
+    };
+  }
+
+  const result = data as {
+    sale_return_id?: string;
+    status?: SaleDetails["status"];
+    refund_amount?: number | string;
+  } | null;
+
+  revalidatePath("/vendas");
+  revalidatePath("/produtos");
+  revalidatePath("/estoques");
+  revalidatePath("/financeiro");
+  revalidatePath("/caixa");
+  revalidatePath("/relatorios");
+  revalidatePath("/dashboard");
+
+  return {
+    success: true,
+    message: input.returnType === "cancellation"
+      ? "Venda cancelada, estoque reposto e valor estornado."
+      : "Devolução registrada, estoque reposto e valor estornado.",
+    saleReturnId: result?.sale_return_id,
+    status: result?.status,
+    refundAmount: asNumber(result?.refund_amount),
+  };
 }
 
 export async function createSale(

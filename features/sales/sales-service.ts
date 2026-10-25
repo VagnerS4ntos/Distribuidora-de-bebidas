@@ -81,7 +81,7 @@ export async function getSalesPageData({
   let historyQuery = supabase
     .from("sales")
     .select(
-      "id, sold_at, created_at, total, customers(name), sale_items(id), sale_payments(payment_method)",
+      "id, sold_at, created_at, updated_at, status, total, customers(name), sale_items(id), sale_payments(payment_method), sale_returns(refund_amount)",
       { count: "exact" },
     )
     .eq("organization_id", organizationId);
@@ -122,7 +122,7 @@ export async function getSalesPageData({
       historyQuery,
       supabase
         .from("sales")
-        .select("total, sale_items(quantity, unit_cost)")
+        .select("total, sale_items(product_id, quantity, unit_cost), sale_returns(refund_amount, sale_return_items(product_id, quantity))")
         .eq("organization_id", organizationId)
         .eq("status", "completed")
         .gte("sold_at", todayStart)
@@ -139,27 +139,53 @@ export async function getSalesPageData({
   if (firstError) throw firstError;
 
   const todaySales = todayResult.data ?? [];
-  const todayTotal = todaySales.reduce(
-    (total, sale) => total + asNumber(sale.total),
-    0,
-  );
+  const todayTotal = todaySales.reduce((total, sale) => {
+    const refunded = (sale.sale_returns ?? []).reduce(
+      (returnTotal, saleReturn) => returnTotal + asNumber(saleReturn.refund_amount),
+      0,
+    );
+    return total + Math.max(0, asNumber(sale.total) - refunded);
+  }, 0);
   const todayItems = todaySales.reduce(
-    (salesTotal, sale) =>
-      salesTotal +
-      (sale.sale_items ?? []).reduce(
-        (itemsTotal, item) => itemsTotal + asNumber(item.quantity),
+    (salesTotal, sale) => {
+      const returnedByProduct = new Map<string, number>();
+      for (const saleReturn of sale.sale_returns ?? []) {
+        for (const returnedItem of saleReturn.sale_return_items ?? []) {
+          returnedByProduct.set(
+            returnedItem.product_id,
+            (returnedByProduct.get(returnedItem.product_id) ?? 0) + asNumber(returnedItem.quantity),
+          );
+        }
+      }
+      return salesTotal + (sale.sale_items ?? []).reduce(
+        (itemsTotal, item) => itemsTotal + Math.max(
+          0,
+          asNumber(item.quantity) - (returnedByProduct.get(item.product_id) ?? 0),
+        ),
         0,
-      ),
+      );
+    },
     0,
   );
   const todayCost = todaySales.reduce(
-    (salesTotal, sale) =>
-      salesTotal +
-      (sale.sale_items ?? []).reduce(
-        (itemsTotal, item) =>
-          itemsTotal + asNumber(item.quantity) * asNumber(item.unit_cost),
+    (salesTotal, sale) => {
+      const returnedByProduct = new Map<string, number>();
+      for (const saleReturn of sale.sale_returns ?? []) {
+        for (const returnedItem of saleReturn.sale_return_items ?? []) {
+          returnedByProduct.set(
+            returnedItem.product_id,
+            (returnedByProduct.get(returnedItem.product_id) ?? 0) + asNumber(returnedItem.quantity),
+          );
+        }
+      }
+      return salesTotal + (sale.sale_items ?? []).reduce(
+        (itemsTotal, item) => itemsTotal + Math.max(
+          0,
+          asNumber(item.quantity) - (returnedByProduct.get(item.product_id) ?? 0),
+        ) * asNumber(item.unit_cost),
         0,
-      ),
+      );
+    },
     0,
   );
   const todayGrossProfit = todayTotal - todayCost;
@@ -187,17 +213,29 @@ export async function getSalesPageData({
     };
   });
 
-  const recentSales: RecentSale[] = (recentResult.data ?? []).map((sale) => ({
-    id: sale.id,
-    customer:
-      (sale.customers as { name?: string } | null)?.name ?? "Consumidor final",
-    soldAt: sale.sold_at ?? sale.created_at,
-    total: asNumber(sale.total),
-    itemCount: ((sale.sale_items ?? []) as Array<{ id: string }>).length,
-    paymentMethod:
-      ((sale.sale_payments ?? []) as Array<{ payment_method?: string }>)[0]
-        ?.payment_method ?? null,
-  }));
+  const recentSales: RecentSale[] = (recentResult.data ?? []).map((sale) => {
+    const refundedAmount = ((sale.sale_returns ?? []) as Array<{ refund_amount: number | string }>).reduce(
+      (total, saleReturn) => total + asNumber(saleReturn.refund_amount),
+      0,
+    );
+    const total = asNumber(sale.total);
+    return {
+      id: sale.id,
+      customer:
+        (sale.customers as { name?: string } | null)?.name ?? "Consumidor final",
+      soldAt: sale.sold_at ?? sale.created_at,
+      updatedAt: sale.updated_at,
+      total,
+      refundedAmount,
+      netTotal: Math.max(0, total - refundedAmount),
+      itemCount: ((sale.sale_items ?? []) as Array<{ id: string }>).length,
+      paymentMethod:
+        ((sale.sale_payments ?? []) as Array<{ payment_method?: string }>)[0]
+          ?.payment_method ?? null,
+      status: sale.status as RecentSale["status"],
+      hasPartialReturn: sale.status === "completed" && refundedAmount > 0,
+    };
+  });
 
   return {
     organizationId,
@@ -219,5 +257,7 @@ export async function getSalesPageData({
       1,
       Math.ceil(historyTotal / SALES_HISTORY_PAGE_SIZE),
     ),
+    canManageReturns:
+      currentMember.role === "owner" || currentMember.role === "manager",
   };
 }

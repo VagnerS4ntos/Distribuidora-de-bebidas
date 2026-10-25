@@ -1,12 +1,17 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
+  Ban,
+  Check,
   CircleAlert,
+  History,
   LoaderCircle,
   PackageOpen,
   ReceiptText,
+  RotateCcw,
   X,
 } from "lucide-react";
 import type {
@@ -14,7 +19,7 @@ import type {
   SaleDetails,
 } from "@/features/sales/sales-types";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
-import { getSaleDetails } from "./actions";
+import { getSaleDetails, processSaleReturn } from "./actions";
 
 const paymentLabels: Record<string, string> = {
   cash: "Dinheiro",
@@ -31,7 +36,7 @@ const statusLabels: Record<SaleDetails["status"], string> = {
   draft: "Rascunho",
   completed: "Concluída",
   cancelled: "Cancelada",
-  refunded: "Estornada",
+  refunded: "Devolvida",
 };
 
 function formatSaleDate(value: string) {
@@ -45,14 +50,27 @@ function formatSaleDate(value: string) {
   }).format(new Date(value));
 }
 
-export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
+export function SalesHistoryTable({
+  sales,
+  canManageReturns,
+}: {
+  sales: RecentSale[];
+  canManageReturns: boolean;
+}) {
+  const router = useRouter();
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [details, setDetails] = useState<SaleDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionMode, setActionMode] = useState<"return" | "cancellation" | null>(null);
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, string>>({});
+  const [returnReason, setReturnReason] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{ message: string; success: boolean } | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const requestIdRef = useRef(0);
+  const observedSaleRevisionRef = useRef<string | null>(null);
 
   const closeModal = () => {
     requestIdRef.current += 1;
@@ -60,15 +78,23 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
     setDetails(null);
     setError(null);
     setLoading(false);
+    setActionMode(null);
+    setReturnQuantities({});
+    setReturnReason("");
+    setActionFeedback(null);
     window.requestAnimationFrame(() => openerRef.current?.focus());
   };
 
-  const loadDetails = async (saleId: string) => {
+  const loadDetails = useCallback(async (saleId: string) => {
     const requestId = ++requestIdRef.current;
     setSelectedSaleId(saleId);
     setDetails(null);
     setError(null);
     setLoading(true);
+    setActionMode(null);
+    setReturnQuantities({});
+    setReturnReason("");
+    setActionFeedback(null);
 
     try {
       const result = await getSaleDetails(saleId);
@@ -81,6 +107,53 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
       }
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
+    }
+  }, []);
+
+  const openAction = (mode: "return" | "cancellation") => {
+    setActionMode(mode);
+    setReturnReason("");
+    setActionFeedback(null);
+    setReturnQuantities({});
+  };
+
+  const submitPostSale = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!details || !actionMode) return;
+    const items = details.items
+      .map((item) => ({
+        saleItemId: item.id,
+        quantity: Number(returnQuantities[item.id] ?? 0),
+      }))
+      .filter((item) => item.quantity > 0);
+
+    setActionBusy(true);
+    setActionFeedback(null);
+    try {
+      const result = await processSaleReturn({
+        saleId: details.id,
+        returnType: actionMode,
+        reason: returnReason,
+        items,
+      });
+      if (result.success) {
+        const successFeedback = { message: result.message, success: true };
+        setActionMode(null);
+        setReturnQuantities({});
+        setReturnReason("");
+        await loadDetails(details.id);
+        setActionFeedback(successFeedback);
+        router.refresh();
+      } else {
+        setActionFeedback({ message: result.message, success: false });
+      }
+    } catch {
+      setActionFeedback({
+        message: "Não foi possível concluir a operação. Tente novamente.",
+        success: false,
+      });
+    } finally {
+      setActionBusy(false);
     }
   };
 
@@ -113,6 +186,26 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [selectedSaleId]);
+
+  useEffect(() => {
+    if (!selectedSaleId) {
+      observedSaleRevisionRef.current = null;
+      return;
+    }
+
+    const selectedSale = sales.find((sale) => sale.id === selectedSaleId);
+    if (!selectedSale) return;
+    const revision = `${selectedSale.updatedAt}:${selectedSale.status}:${selectedSale.refundedAmount}`;
+
+    if (observedSaleRevisionRef.current === null) {
+      observedSaleRevisionRef.current = revision;
+      return;
+    }
+    if (observedSaleRevisionRef.current !== revision) {
+      observedSaleRevisionRef.current = revision;
+      void loadDetails(selectedSaleId);
+    }
+  }, [loadDetails, sales, selectedSaleId]);
 
   const modal = selectedSaleId ? (
     <div
@@ -186,13 +279,16 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
               {details.items.length ? (
                 <div className="sale-detail-table-wrap">
                   <table className="data-table sale-detail-table">
-                    <thead><tr><th>Produto</th><th>SKU</th><th className="align-center">Qtd.</th><th className="align-right">Unitário</th><th className="align-right">Total</th></tr></thead>
+                    <thead><tr><th>Produto</th><th>SKU</th><th className="align-center">Vendida</th><th className="align-center">Devolvida</th><th className="align-right">Unitário</th><th className="align-right">Total</th></tr></thead>
                     <tbody>
                       {details.items.map((item) => (
                         <tr key={item.id}>
                           <td><strong>{item.product}</strong>{item.brand && <small>{item.brand}</small>}</td>
                           <td className="muted-cell">{item.sku ?? "—"}</td>
                           <td className="align-center">{formatNumber(item.quantity)} {item.unit}</td>
+                          <td className={`align-center ${item.returnedQuantity ? "sale-returned-quantity" : "muted-cell"}`}>
+                            {formatNumber(item.returnedQuantity)} {item.unit}
+                          </td>
                           <td className="align-right">{formatCurrency(item.unitPrice)}</td>
                           <td className="align-right"><strong>{formatCurrency(item.total)}</strong></td>
                         </tr>
@@ -204,6 +300,132 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
                 <div className="sale-detail-empty"><PackageOpen size={20} />Nenhum item encontrado nesta venda.</div>
               )}
 
+              {details.returns.length > 0 && (
+                <section className="sale-returns-history">
+                  <div className="sale-detail-section-head">
+                    <div><span className="panel-kicker">Pós-venda</span><h3>Cancelamentos e devoluções</h3></div>
+                    <span className="table-count">{details.returns.length} registro(s)</span>
+                  </div>
+                  <div className="sale-return-cards">
+                    {details.returns.map((saleReturn) => (
+                      <article key={saleReturn.id}>
+                        <header>
+                          <span className="sale-return-icon"><History size={16} /></span>
+                          <div>
+                            <strong>{saleReturn.returnType === "cancellation" ? "Cancelamento integral" : "Devolução"}</strong>
+                            <small>{formatSaleDate(saleReturn.createdAt)} · #{saleReturn.id.slice(0, 8)}</small>
+                          </div>
+                          <strong>{formatCurrency(saleReturn.refundAmount)}</strong>
+                        </header>
+                        <p>{saleReturn.reason}</p>
+                        <div className="sale-return-card-items">
+                          {saleReturn.items.map((item, index) => (
+                            <span key={`${saleReturn.id}-${index}`}>
+                              {item.product} · {formatNumber(item.quantity)} {item.unit}
+                            </span>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {actionFeedback && (
+                <div className={`sale-feedback ${actionFeedback.success ? "sale-feedback-success" : "sale-feedback-error"}`} role={actionFeedback.success ? "status" : "alert"}>
+                  {actionFeedback.success ? <Check size={16} /> : <CircleAlert size={16} />}
+                  {actionFeedback.message}
+                </div>
+              )}
+
+              {canManageReturns && details.status === "completed" && !actionMode && (
+                <div className="sale-post-actions">
+                  <div>
+                    <span className="panel-kicker">Ações de pós-venda</span>
+                    <p>As duas operações repõem o estoque e registram o estorno financeiro.</p>
+                  </div>
+                  <div>
+                    {details.items.some((item) => item.returnableQuantity > 0) && (
+                      <button className="button button-secondary" type="button" onClick={() => openAction("return")}>
+                        <RotateCcw size={16} />Registrar devolução
+                      </button>
+                    )}
+                    {details.canCancel && (
+                      <button className="button sale-cancel-button" type="button" onClick={() => openAction("cancellation")}>
+                        <Ban size={16} />Cancelar venda
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {actionMode && (
+                <form className="sale-return-form" onSubmit={submitPostSale} aria-busy={actionBusy}>
+                  <div className="sale-return-form-head">
+                    <span className={`sale-return-icon ${actionMode === "cancellation" ? "is-cancellation" : ""}`}>
+                      {actionMode === "cancellation" ? <Ban size={18} /> : <RotateCcw size={18} />}
+                    </span>
+                    <div>
+                      <span className="panel-kicker">Confirmação</span>
+                      <h3>{actionMode === "cancellation" ? "Cancelar venda integralmente" : "Registrar devolução de itens"}</h3>
+                      <p>{actionMode === "cancellation" ? "Todos os itens voltarão ao estoque e o valor integral será estornado." : "Informe somente as quantidades que o cliente está devolvendo."}</p>
+                    </div>
+                  </div>
+
+                  {actionMode === "return" && (
+                    <div className="sale-return-item-fields">
+                      {details.items.filter((item) => item.returnableQuantity > 0).map((item) => (
+                        <label key={item.id}>
+                          <span>
+                            <strong>{item.product}</strong>
+                            <small>Disponível: {formatNumber(item.returnableQuantity)} {item.unit}</small>
+                          </span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            max={item.returnableQuantity}
+                            step="1"
+                            value={returnQuantities[item.id] ?? "0"}
+                            onKeyDown={(event) => {
+                              if ([".", ",", "e", "E", "+", "-"].includes(event.key)) event.preventDefault();
+                            }}
+                            onChange={(event) => {
+                              if (event.target.value === "" || /^\d+$/.test(event.target.value)) {
+                                setReturnQuantities((current) => ({ ...current, [item.id]: event.target.value }));
+                              }
+                            }}
+                            disabled={actionBusy}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="sale-return-reason">
+                    <span>Motivo <span className="required-mark">*</span></span>
+                    <textarea
+                      value={returnReason}
+                      onChange={(event) => setReturnReason(event.target.value)}
+                      minLength={3}
+                      maxLength={500}
+                      rows={3}
+                      placeholder={actionMode === "cancellation" ? "Informe por que a venda está sendo cancelada" : "Informe o motivo da devolução"}
+                      required
+                      disabled={actionBusy}
+                    />
+                  </label>
+
+                  <div className="sale-return-form-actions">
+                    <button className="button button-secondary" type="button" onClick={() => setActionMode(null)} disabled={actionBusy}>Voltar</button>
+                    <button className={`button ${actionMode === "cancellation" ? "sale-cancel-button" : "button-primary"}`} type="submit" disabled={actionBusy}>
+                      {actionBusy ? <LoaderCircle className="feedback-spinner" size={16} /> : actionMode === "cancellation" ? <Ban size={16} /> : <RotateCcw size={16} />}
+                      {actionBusy ? "Processando..." : actionMode === "cancellation" ? "Confirmar cancelamento" : "Confirmar devolução"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
               <div className="sale-detail-footer">
                 <div className="sale-detail-notes">
                   <span>Observações</span>
@@ -212,7 +434,9 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
                 <div className="sale-detail-summary">
                   <div><span>Subtotal</span><strong>{formatCurrency(details.subtotal)}</strong></div>
                   <div><span>Desconto</span><strong>{formatCurrency(details.discount)}</strong></div>
-                  <div className="sale-detail-grand-total"><span>Total</span><strong>{formatCurrency(details.total)}</strong></div>
+                  <div><span>Total original</span><strong>{formatCurrency(details.total)}</strong></div>
+                  {details.refundedAmount > 0 && <div className="sale-detail-refunded"><span>Valor devolvido</span><strong>− {formatCurrency(details.refundedAmount)}</strong></div>}
+                  <div className="sale-detail-grand-total"><span>Valor líquido</span><strong>{formatCurrency(details.netTotal)}</strong></div>
                 </div>
               </div>
             </>
@@ -226,7 +450,7 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
     <>
       <div className="data-table-wrap">
         <table className="data-table sales-table">
-          <thead><tr><th>Venda</th><th>Cliente</th><th>Data</th><th className="align-center">Itens</th><th>Pagamento</th><th className="align-right">Total</th></tr></thead>
+          <thead><tr><th>Venda</th><th>Cliente</th><th>Data</th><th className="align-center">Itens</th><th>Situação</th><th>Pagamento</th><th className="align-right">Valor líquido</th></tr></thead>
           <tbody>
             {sales.map((sale) => (
               <tr
@@ -242,8 +466,16 @@ export function SalesHistoryTable({ sales }: { sales: RecentSale[] }) {
                 <td><strong>{sale.customer}</strong></td>
                 <td className="muted-cell">{formatSaleDate(sale.soldAt)}</td>
                 <td className="align-center">{formatNumber(sale.itemCount)}</td>
+                <td>
+                  <span className={`status-badge ${sale.hasPartialReturn ? "status-attention" : `status-${sale.status}`}`}>
+                    {sale.hasPartialReturn ? "Devolução parcial" : statusLabels[sale.status]}
+                  </span>
+                </td>
                 <td>{sale.paymentMethod ? paymentLabels[sale.paymentMethod] ?? "Outro" : <span className="muted-cell">Não informado</span>}</td>
-                <td className="align-right"><strong>{formatCurrency(sale.total)}</strong></td>
+                <td className="align-right">
+                  <strong>{formatCurrency(sale.netTotal)}</strong>
+                  {sale.refundedAmount > 0 && <small className="sale-list-refund">− {formatCurrency(sale.refundedAmount)} devolvido</small>}
+                </td>
               </tr>
             ))}
           </tbody>

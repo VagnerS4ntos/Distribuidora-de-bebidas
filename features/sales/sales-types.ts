@@ -2,9 +2,14 @@ export type RecentSale = {
   id: string;
   customer: string;
   soldAt: string;
+  updatedAt: string;
   total: number;
+  refundedAmount: number;
+  netTotal: number;
   itemCount: number;
   paymentMethod: string | null;
+  status: "draft" | "completed" | "cancelled" | "refunded";
+  hasPartialReturn: boolean;
 };
 
 export type SaleDetails = {
@@ -27,6 +32,8 @@ export type SaleDetails = {
     unitPrice: number;
     discount: number;
     total: number;
+    returnedQuantity: number;
+    returnableQuantity: number;
   }>;
   payments: Array<{
     method: string;
@@ -34,6 +41,22 @@ export type SaleDetails = {
     status: string;
     paidAt: string | null;
   }>;
+  returns: Array<{
+    id: string;
+    returnType: "cancellation" | "return";
+    refundAmount: number;
+    reason: string;
+    createdAt: string;
+    items: Array<{
+      product: string;
+      unit: string;
+      quantity: number;
+      totalRefund: number;
+    }>;
+  }>;
+  refundedAmount: number;
+  netTotal: number;
+  canCancel: boolean;
 };
 
 export type SaleDetailsResult =

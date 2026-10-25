@@ -2,7 +2,7 @@ const labels = {
   completed: "Concluída",
   draft: "Rascunho",
   cancelled: "Cancelada",
-  refunded: "Estornada",
+  refunded: "Devolvida",
   attention: "Atenção",
 } as const;
 

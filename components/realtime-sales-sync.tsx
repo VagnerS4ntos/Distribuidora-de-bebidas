@@ -50,6 +50,26 @@ export function RealtimeSalesSync({ organizationId }: { organizationId: string }
           {
             event: "*",
             schema: "public",
+            table: "sale_returns",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "sale_return_items",
+            filter: `organization_id=eq.${organizationId}`,
+          },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
             table: "customers",
             filter: `organization_id=eq.${organizationId}`,
           },

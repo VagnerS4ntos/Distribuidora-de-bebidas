@@ -127,7 +127,10 @@ export default async function SalesPage({
           </div>
         </div>
         {data.recentSales.length ? (
-          <SalesHistoryTable sales={data.recentSales} />
+          <SalesHistoryTable
+            sales={data.recentSales}
+            canManageReturns={data.canManageReturns}
+          />
         ) : (
           <EmptyState
             icon={PackageOpen}
