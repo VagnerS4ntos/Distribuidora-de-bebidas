@@ -1,4 +1,5 @@
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const INVENTORY_PAGE_SIZE = 10;
@@ -227,7 +228,7 @@ export async function getInventoryPageData({
     organizationId,
     organizationName: membership.organizationName,
     hasMembership: true,
-    canAdjustStock: membership.role === "owner" || membership.role === "manager",
+    canAdjustStock: hasPermission(membership.role, "inventory.adjust"),
     locations: availableLocations,
     products: (products ?? []).map((product) => {
       const balances = (product.inventory_balances ?? []) as BalanceRow[];

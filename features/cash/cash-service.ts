@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type {
   CashLocationOption,
   CashMovementListItem,
@@ -197,7 +198,7 @@ export async function getCashPageData({ page = 1 }: { page?: number } = {}) {
     organizationId,
     organizationName: member.organizationName,
     role: member.role,
-    canManageRegisters: member.role === "owner" || member.role === "manager",
+    canManageRegisters: hasPermission(member.role, "cash.manage"),
     registers,
     locations: (locationsResult.data ?? []) as CashLocationOption[],
     openSession,

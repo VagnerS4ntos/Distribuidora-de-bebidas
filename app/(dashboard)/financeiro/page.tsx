@@ -61,7 +61,7 @@ export default async function FinancePage({
     );
   }
 
-  const showNewEntry = params.novo === "1";
+  const showNewEntry = params.novo === "1" && data.canManageFinance;
   const listParams = new URLSearchParams();
   if (data.search) listParams.set("busca", data.search);
   if (data.type !== "all") listParams.set("tipo", data.type);
@@ -91,14 +91,16 @@ export default async function FinancePage({
           <h1>Financeiro</h1>
           <p>Acompanhe entradas, saídas e compromissos da {data.organizationName}.</p>
         </div>
-        <Link
-          className={`button ${showNewEntry ? "button-secondary" : "button-primary"}`}
-          href={showNewEntry ? returnHref : `/financeiro?${newEntryParams}`}
-          scroll={false}
-        >
-          {showNewEntry ? <X size={17} /> : <Plus size={17} />}
-          {showNewEntry ? "Cancelar" : "Novo lançamento"}
-        </Link>
+        {data.canManageFinance && (
+          <Link
+            className={`button ${showNewEntry ? "button-secondary" : "button-primary"}`}
+            href={showNewEntry ? returnHref : `/financeiro?${newEntryParams}`}
+            scroll={false}
+          >
+            {showNewEntry ? <X size={17} /> : <Plus size={17} />}
+            {showNewEntry ? "Cancelar" : "Novo lançamento"}
+          </Link>
+        )}
       </section>
 
       {params.criado && (
@@ -167,7 +169,10 @@ export default async function FinancePage({
         />
 
         {data.entries.length ? (
-          <FinancialEntriesTable entries={data.entries} />
+          <FinancialEntriesTable
+            entries={data.entries}
+            canManageFinance={data.canManageFinance}
+          />
         ) : (
           <EmptyState
             icon={Landmark}

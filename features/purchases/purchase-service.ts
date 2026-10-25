@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type {
   PurchaseListItem,
   PurchaseStatus,
@@ -191,7 +192,7 @@ export async function getPurchasesPageData({
   return {
     organizationId,
     organizationName: member.organizationName,
-    canManagePurchases: true,
+    canManagePurchases: hasPermission(member.role, "purchases.manage"),
     suppliers: (suppliersResult.data ?? []).map((supplier) => ({
       id: supplier.id,
       name: supplier.name,

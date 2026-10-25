@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type { FinancialEntryType } from "@/features/finance/finance-types";
 import { createClient } from "@/lib/supabase/server";
 import { brasiliaDateInputValue, isValidDateInput } from "@/lib/utils/date";
@@ -103,6 +104,9 @@ export async function createFinancialEntry(
 ): Promise<FinancialActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "finance.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para alterar o financeiro." };
+  }
 
   if (input.entryType !== "income" && input.entryType !== "expense") {
     return { success: false, message: "Selecione um tipo de lançamento válido." };
@@ -181,6 +185,9 @@ export async function recordFinancialPayment(
 ): Promise<FinancialActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "finance.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para alterar o financeiro." };
+  }
   if (!uuidPattern.test(input.entryId)) {
     return { success: false, message: "Lançamento financeiro inválido." };
   }

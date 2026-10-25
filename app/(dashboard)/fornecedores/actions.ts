@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern =
@@ -62,6 +63,9 @@ export async function createSupplier(input: SupplierInput): Promise<SupplierResu
   if (!member) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
+  if (!hasPermission(member.role, "catalog.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para cadastrar fornecedores." };
+  }
 
   const validation = validateSupplier(input);
   if (validation) return validation;
@@ -102,7 +106,7 @@ export async function updateSupplier(
   if (!member) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
-  if (member.role !== "owner" && member.role !== "manager") {
+  if (!hasPermission(member.role, "catalog.manage")) {
     return { success: false, message: "Seu perfil não tem permissão para editar fornecedores." };
   }
   if (!uuidPattern.test(input.supplierId)) {

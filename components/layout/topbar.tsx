@@ -32,7 +32,7 @@ export function Topbar({
         <BrandMark compact />
       </div>
       <div className="topbar-spacer" />
-      <TopbarActions organizationId={organizationId} />
+      <TopbarActions organizationId={organizationId} role={role} />
       <span className="avatar">{initials}</span>
       <span className="profile-copy">
         <strong>{fullName}</strong>

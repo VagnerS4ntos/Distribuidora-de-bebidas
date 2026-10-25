@@ -1,4 +1,5 @@
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const CUSTOMERS_PAGE_SIZE = 10;
@@ -170,8 +171,8 @@ export async function getCustomersPageData({
     organizationId,
     organizationName: member.organizationName,
     hasMembership: true,
-    canCreateCustomers: true,
-    canEditCustomers: member.role === "owner" || member.role === "manager",
+    canCreateCustomers: hasPermission(member.role, "catalog.manage"),
+    canEditCustomers: hasPermission(member.role, "catalog.manage"),
     customers: (customers ?? []).map((customer) => ({
       id: customer.id,
       name: customer.name,

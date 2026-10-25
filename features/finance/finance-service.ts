@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type {
   FinancialCategoryOption,
   FinancialContactOption,
@@ -285,6 +286,7 @@ export async function getFinancialPageData({
   return {
     organizationId,
     organizationName: member.organizationName,
+    canManageFinance: hasPermission(member.role, "finance.manage"),
     entries,
     categories: (categoriesResult.data ?? []).map((category) => ({
       id: category.id,

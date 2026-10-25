@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type { ManualCashMovementType } from "@/features/cash/cash-types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,7 +73,7 @@ export async function createCashRegister(input: {
 }): Promise<CashActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
-  if (member.role !== "owner" && member.role !== "manager") {
+  if (!hasPermission(member.role, "cash.manage")) {
     return { success: false, message: "Você não possui acesso para criar caixas." };
   }
   if (input.name.trim().length < 2 || input.name.trim().length > 80) {
@@ -106,6 +107,9 @@ export async function openCashSession(input: {
 }): Promise<CashActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "cash.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para abrir o caixa." };
+  }
   if (!uuidPattern.test(input.cashRegisterId)) {
     return { success: false, message: "Selecione um caixa válido." };
   }
@@ -139,6 +143,9 @@ export async function recordCashMovement(input: {
 }): Promise<CashActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "cash.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para movimentar o caixa." };
+  }
   if (!uuidPattern.test(input.cashSessionId)) {
     return { success: false, message: "Caixa não encontrado." };
   }
@@ -182,6 +189,9 @@ export async function closeCashSession(input: {
 }): Promise<CashActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "cash.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para fechar o caixa." };
+  }
   if (!uuidPattern.test(input.cashSessionId)) {
     return { success: false, message: "Caixa não encontrado." };
   }

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type { RecentSale } from "@/features/sales/sales-types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -257,7 +258,6 @@ export async function getSalesPageData({
       1,
       Math.ceil(historyTotal / SALES_HISTORY_PAGE_SIZE),
     ),
-    canManageReturns:
-      currentMember.role === "owner" || currentMember.role === "manager",
+    canManageReturns: hasPermission(currentMember.role, "sales.manage_returns"),
   };
 }

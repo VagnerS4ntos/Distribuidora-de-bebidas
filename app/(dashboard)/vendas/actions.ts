@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type {
   SaleDetails,
   SaleDetailsResult,
@@ -219,7 +220,7 @@ export async function processSaleReturn(
   if (!currentMember) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
-  if (currentMember.role !== "owner" && currentMember.role !== "manager") {
+  if (!hasPermission(currentMember.role, "sales.manage_returns")) {
     return { success: false, message: "Seu perfil não tem permissão para esta operação." };
   }
   if (!uuidPattern.test(input.saleId)) {
@@ -331,6 +332,9 @@ export async function createSale(
   const currentMember = await getCurrentMember();
   if (!currentMember) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  }
+  if (!hasPermission(currentMember.role, "sales.create")) {
+    return { success: false, message: "Seu perfil não tem permissão para registrar vendas." };
   }
 
   if (!uuidPattern.test(input.locationId)) {

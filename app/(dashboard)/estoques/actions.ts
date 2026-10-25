@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern =
@@ -28,7 +29,7 @@ export async function adjustInventory(
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
 
-  if (member.role !== "owner" && member.role !== "manager") {
+  if (!hasPermission(member.role, "inventory.adjust")) {
     return {
       success: false,
       message: "Seu perfil não tem permissão para ajustar o estoque.",

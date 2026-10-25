@@ -62,3 +62,9 @@ A migration `20261025160000_implement_sale_cancellations_and_returns.sql` cria o
 histórico de cancelamentos e devoluções parciais ou totais. A operação recompõe
 o estoque, registra o estorno financeiro, movimenta o caixa quando o pagamento
 foi em dinheiro, grava auditoria e publica os novos registros no Realtime.
+
+A migration `20261025173000_enforce_detailed_role_permissions.sql` aplica a matriz
+de acesso detalhada. Proprietários mantêm acesso completo; gerentes podem operar
+cadastros, estoque, compras, financeiro, caixa e relatórios sem gerenciar a equipe
+ou excluir registros; operadores podem consultar os dados e registrar vendas, sem
+alterar cadastros, estoque, compras, financeiro ou caixa.

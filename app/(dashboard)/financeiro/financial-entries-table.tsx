@@ -72,7 +72,13 @@ function sourceLabel(entry: FinancialListItem) {
   return "Lançamento manual";
 }
 
-export function FinancialEntriesTable({ entries }: { entries: FinancialListItem[] }) {
+export function FinancialEntriesTable({
+  entries,
+  canManageFinance,
+}: {
+  entries: FinancialListItem[];
+  canManageFinance: boolean;
+}) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
@@ -159,6 +165,7 @@ export function FinancialEntriesTable({ entries }: { entries: FinancialListItem[
   }, [selectedId]);
 
   const canReceivePayment = selectedEntry
+    && canManageFinance
     && selectedEntry.outstandingAmount > 0
     && selectedEntry.status !== "cancelled";
 

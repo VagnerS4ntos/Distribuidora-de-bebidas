@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 
 const PRODUCTS_PAGE_SIZE = 10;
 
@@ -190,6 +191,6 @@ export async function getProductsPageData({
     organizationId,
     organizationName: membership.organizationName,
     hasMembership: true,
-    canEditProducts: membership.role === "owner" || membership.role === "manager",
+    canEditProducts: hasPermission(membership.role, "catalog.manage"),
   };
 }

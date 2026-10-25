@@ -14,6 +14,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatQuantity } from "@/lib/utils/format";
+import type { OrganizationRole } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 
 type AlertItem = {
   id: string;
@@ -50,7 +52,13 @@ function asNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function TopbarActions({ organizationId }: { organizationId?: string }) {
+export function TopbarActions({
+  organizationId,
+  role,
+}: {
+  organizationId?: string;
+  role?: OrganizationRole;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -225,8 +233,8 @@ export function TopbarActions({ organizationId }: { organizationId?: string }) {
             <p className="topbar-popover-intro">Acesse diretamente as tarefas mais comuns da Santo Gole.</p>
             <nav className="topbar-help-links" aria-label="Atalhos de ajuda">
               <Link href="/vendas?nova=1" onClick={() => setOpenMenu(null)}><ShoppingCart size={18} /><span><strong>Registrar uma venda</strong><small>Selecione os produtos e conclua o pedido.</small></span></Link>
-              <Link href="/produtos?novo=1" onClick={() => setOpenMenu(null)}><PackagePlus size={18} /><span><strong>Cadastrar um produto</strong><small>Inclua preços e o estoque inicial.</small></span></Link>
-              <Link href="/compras?nova=1" onClick={() => setOpenMenu(null)}><BookOpenText size={18} /><span><strong>Registrar uma compra</strong><small>Crie o pedido e acompanhe o recebimento.</small></span></Link>
+              {hasPermission(role, "catalog.manage") && <Link href="/produtos?novo=1" onClick={() => setOpenMenu(null)}><PackagePlus size={18} /><span><strong>Cadastrar um produto</strong><small>Inclua preços e o estoque inicial.</small></span></Link>}
+              {hasPermission(role, "purchases.manage") && <Link href="/compras?nova=1" onClick={() => setOpenMenu(null)}><BookOpenText size={18} /><span><strong>Registrar uma compra</strong><small>Crie o pedido e acompanhe o recebimento.</small></span></Link>}
             </nav>
           </section>
         )}

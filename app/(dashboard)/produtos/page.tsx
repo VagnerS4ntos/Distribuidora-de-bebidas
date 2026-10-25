@@ -37,7 +37,7 @@ export default async function ProductsPage({
     ? data.products.find((product) => product.id === params.editar)
     : undefined;
   const showNewProduct =
-    params.novo === "1" && data.hasMembership && !editingProduct;
+    params.novo === "1" && data.canEditProducts && !editingProduct;
   const showProductForm = showNewProduct || Boolean(editingProduct);
   const pageHref = (page: number) =>
     page > 1 ? `/produtos?pagina=${page}` : "/produtos";
@@ -64,7 +64,7 @@ export default async function ProductsPage({
           <h1>Produtos</h1>
           <p>{data.organizationName ? `Catálogo da ${data.organizationName}.` : "Organize bebidas por categoria, marca e embalagem."}</p>
         </div>
-        {data.hasMembership && (
+        {data.canEditProducts && (
           <Link
             className={`button ${showProductForm ? "button-secondary" : "button-primary"}`}
             href={showProductForm ? pageHref(data.page) : newProductHref}

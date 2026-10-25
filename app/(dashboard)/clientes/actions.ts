@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern =
@@ -57,6 +58,9 @@ export async function createCustomer(input: CustomerInput): Promise<CustomerResu
   if (!member) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
+  if (!hasPermission(member.role, "catalog.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para cadastrar clientes." };
+  }
 
   const validation = validateCustomer(input);
   if (validation) return validation;
@@ -95,7 +99,7 @@ export async function updateCustomer(
   if (!member) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
-  if (member.role !== "owner" && member.role !== "manager") {
+  if (!hasPermission(member.role, "catalog.manage")) {
     return { success: false, message: "Seu perfil não tem permissão para editar clientes." };
   }
   if (!uuidPattern.test(input.customerId)) {

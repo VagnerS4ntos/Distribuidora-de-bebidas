@@ -1131,6 +1131,51 @@ a {
 .team-panel {
   overflow: hidden;
 }
+
+.access-matrix-panel {
+  margin-bottom: 24px;
+}
+
+.access-matrix-table th:not(:first-child),
+.access-matrix-table td:not(:first-child) {
+  text-align: center;
+}
+
+.access-matrix-table td:first-child strong,
+.access-matrix-table td:first-child small {
+  display: block;
+}
+
+.access-matrix-table td:first-child small {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.access-level {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 104px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.access-level.is-allowed {
+  color: #087f70;
+  background: #e6f6f2;
+}
+
+.access-level.is-readonly {
+  color: #3f5f78;
+  background: #eaf1f6;
+}
+
+.access-level.is-blocked {
+  color: #a13f35;
+  background: #fcece9;
+}
 .team-create-panel {
   margin-bottom: 18px;
   padding: 20px;

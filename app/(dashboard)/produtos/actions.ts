@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 
 const allowedUnits = new Set(["UN", "CX", "FD", "PACK", "L", "ML", "KG", "G"]);
@@ -50,6 +51,12 @@ export async function createProduct(
   const currentMember = await getCurrentMember();
   if (!currentMember) {
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  }
+  if (!hasPermission(currentMember.role, "catalog.manage")) {
+    return {
+      success: false,
+      message: "Seu perfil não tem permissão para cadastrar produtos.",
+    };
   }
 
   const name = input.name.trim();
@@ -194,7 +201,7 @@ export async function updateProduct(
     return { success: false, message: "Sua sessão expirou. Entre novamente." };
   }
 
-  if (currentMember.role !== "owner" && currentMember.role !== "manager") {
+  if (!hasPermission(currentMember.role, "catalog.manage")) {
     return {
       success: false,
       message: "Seu perfil não tem permissão para editar produtos.",

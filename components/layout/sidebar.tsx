@@ -16,6 +16,8 @@ import {
   WalletCards,
 } from "lucide-react";
 import { BrandMark } from "@/components/layout/brand-mark";
+import type { OrganizationRole } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 
 const mainItems = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
@@ -63,8 +65,11 @@ function NavItems({
   ));
 }
 
-export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
+export function Sidebar({ role }: { role?: OrganizationRole }) {
   const pathname = usePathname();
+  const visibleControlItems = controlItems.filter(
+    (item) => item.href !== "/relatorios" || hasPermission(role, "reports.view"),
+  );
 
   return (
     <aside className="sidebar">
@@ -75,8 +80,8 @@ export function Sidebar({ isOwner = false }: { isOwner?: boolean }) {
         <p className="side-section-label">Operação</p>
         <NavItems items={mainItems} pathname={pathname} />
         <p className="side-section-label side-section-gap">Gestão</p>
-        <NavItems items={controlItems} pathname={pathname} />
-        {isOwner && (
+        <NavItems items={visibleControlItems} pathname={pathname} />
+        {hasPermission(role, "team.manage") && (
           <NavItems
             items={[{ href: "/equipe", label: "Equipe", icon: UserCog }]}
             pathname={pathname}

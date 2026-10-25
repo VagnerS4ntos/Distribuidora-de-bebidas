@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { redirect } from "next/navigation";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -14,6 +15,8 @@ import {
 import { RealtimeReportsSync } from "@/components/realtime-reports-sync";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getReportsPageData } from "@/features/reports/report-service";
+import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type { ReportPeriodPreset } from "@/features/reports/report-types";
 import { formatCurrency, formatQuantity } from "@/lib/utils/format";
 import { ReportExportButton } from "./report-export-button";
@@ -48,6 +51,10 @@ export default async function ReportsPage({
   searchParams: Promise<{ periodo?: string; inicio?: string; fim?: string }>;
 }) {
   const params = await searchParams;
+  const currentMember = await getCurrentMember();
+  if (currentMember && !hasPermission(currentMember.role, "reports.view")) {
+    redirect("/dashboard");
+  }
   const preset: ReportPeriodPreset =
     params.periodo === "today"
     || params.periodo === "7d"

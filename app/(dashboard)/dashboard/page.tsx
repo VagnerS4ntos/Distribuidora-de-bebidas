@@ -11,6 +11,7 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { getDashboardSnapshot } from "@/features/dashboard/dashboard-service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
@@ -54,10 +55,12 @@ export default async function DashboardPage() {
             Acompanhe o ritmo da <strong>{data.organizationName}</strong> hoje.
           </p>
         </div>
-        <Link href="/relatorios" className="button button-secondary">
-          Ver relatórios
-          <ArrowRight size={16} />
-        </Link>
+        {hasPermission(currentMember?.role, "reports.view") && (
+          <Link href="/relatorios" className="button button-secondary">
+            Ver relatórios
+            <ArrowRight size={16} />
+          </Link>
+        )}
       </section>
 
       <section className="metrics-grid" aria-label="Indicadores principais">
@@ -194,12 +197,16 @@ export default async function DashboardPage() {
           <Link href="/vendas">
             Registrar venda <ArrowRight size={16} />
           </Link>
-          <Link href="/produtos">
-            Cadastrar produto <ArrowRight size={16} />
-          </Link>
-          <Link href="/compras">
-            Nova compra <ArrowRight size={16} />
-          </Link>
+          {hasPermission(currentMember?.role, "catalog.manage") && (
+            <Link href="/produtos">
+              Cadastrar produto <ArrowRight size={16} />
+            </Link>
+          )}
+          {hasPermission(currentMember?.role, "purchases.manage") && (
+            <Link href="/compras?nova=1">
+              Nova compra <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
       </section>
     </>

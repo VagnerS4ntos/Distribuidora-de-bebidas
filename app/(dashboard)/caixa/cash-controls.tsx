@@ -313,6 +313,18 @@ export function CashControls({
   locations: CashLocationOption[];
   canManageRegisters: boolean;
 }) {
+  if (!canManageRegisters) {
+    return (
+      <article className="panel cash-unavailable-card">
+        <CircleAlert size={22} />
+        <div>
+          <h2>Caixa em modo de consulta</h2>
+          <p>Operadores podem acompanhar saldos e movimentações, mas não podem abrir, movimentar ou fechar o caixa.</p>
+        </div>
+      </article>
+    );
+  }
+
   if (session) {
     return (
       <section className="cash-action-grid">

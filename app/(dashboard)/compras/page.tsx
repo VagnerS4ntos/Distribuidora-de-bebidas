@@ -32,7 +32,7 @@ export default async function PurchasesPage({
   }>;
 }) {
   const params = await searchParams;
-  const showNewPurchase = params.nova === "1";
+  const requestedNewPurchase = params.nova === "1";
   const requestedPage = Number(params.pagina);
   const status: PurchaseStatusFilter =
     params.status === "open" || params.status === "received" || params.status === "cancelled"
@@ -51,6 +51,8 @@ export default async function PurchasesPage({
       </article>
     );
   }
+
+  const showNewPurchase = requestedNewPurchase && data.canManagePurchases;
 
   const listHref = (
     page = 1,
@@ -76,11 +78,11 @@ export default async function PurchasesPage({
           <h1>Compras</h1>
           <p>Registre pedidos da {data.organizationName}, receba mercadorias e atualize custos e estoque.</p>
         </div>
-        {showNewPurchase ? (
+        {data.canManagePurchases && (showNewPurchase ? (
           <Link href={listHref(1, data.status, false)} className="button button-secondary"><X size={17} />Cancelar</Link>
         ) : (
           <Link href="/compras?nova=1" className="button button-primary"><Plus size={17} />Novo pedido</Link>
-        )}
+        ))}
       </section>
 
       {params.criada && (
@@ -148,7 +150,11 @@ export default async function PurchasesPage({
         />
 
         {data.purchases.length ? (
-          <PurchasesHistoryTable purchases={data.purchases} locations={data.locations} />
+          <PurchasesHistoryTable
+            purchases={data.purchases}
+            locations={data.locations}
+            canManagePurchases={data.canManagePurchases}
+          />
         ) : (
           <EmptyState
             icon={data.status === "open" ? Boxes : PackageOpen}

@@ -81,9 +81,11 @@ function isPurchaseOverdue(expectedAt: string | null, status: PurchaseStatus) {
 export function PurchasesHistoryTable({
   purchases,
   locations,
+  canManagePurchases,
 }: {
   purchases: PurchaseListItem[];
   locations: PurchaseLocation[];
+  canManagePurchases: boolean;
 }) {
   const router = useRouter();
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null);
@@ -226,7 +228,7 @@ export function PurchasesHistoryTable({
   }, [selectedPurchaseId]);
 
   const canReceive =
-    details &&
+    canManagePurchases && details &&
     (details.status === "ordered" || details.status === "partially_received");
   const selectedPurchaseIsOverdue = details
     ? isPurchaseOverdue(details.expectedAt, details.status)

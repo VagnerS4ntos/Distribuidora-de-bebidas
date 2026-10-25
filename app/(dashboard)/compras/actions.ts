@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import type {
   PurchaseDetails,
   PurchaseDetailsResult,
@@ -64,6 +65,9 @@ export async function createPurchaseOrder(
 ): Promise<PurchaseActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "purchases.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para registrar compras." };
+  }
 
   if (!uuidPattern.test(input.supplierId)) {
     return { success: false, message: "Selecione um fornecedor válido." };
@@ -176,6 +180,9 @@ export async function receivePurchaseOrder(
 ): Promise<PurchaseActionResult> {
   const member = await getCurrentMember();
   if (!member) return { success: false, message: "Sua sessão expirou. Entre novamente." };
+  if (!hasPermission(member.role, "purchases.manage")) {
+    return { success: false, message: "Seu perfil não tem permissão para receber compras." };
+  }
   if (!uuidPattern.test(input.purchaseId) || !uuidPattern.test(input.locationId)) {
     return { success: false, message: "Pedido ou local de estoque inválido." };
   }
