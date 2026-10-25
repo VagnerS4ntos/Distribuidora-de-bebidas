@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import Link from "next/link";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -18,6 +17,7 @@ import { getReportsPageData } from "@/features/reports/report-service";
 import type { ReportPeriodPreset } from "@/features/reports/report-types";
 import { formatCurrency, formatQuantity } from "@/lib/utils/format";
 import { ReportExportButton } from "./report-export-button";
+import { ReportPeriodFilter } from "./report-period-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -110,35 +110,11 @@ export default async function ReportsPage({
         />
       </section>
 
-      <article className="panel report-filter-panel">
-        <div className="report-quick-periods" aria-label="Períodos rápidos">
-          <Link className={data.period.preset === "today" ? "is-active" : ""} href="/relatorios?periodo=today">Hoje</Link>
-          <Link className={data.period.preset === "7d" ? "is-active" : ""} href="/relatorios?periodo=7d">7 dias</Link>
-          <Link className={data.period.preset === "30d" ? "is-active" : ""} href="/relatorios?periodo=30d">30 dias</Link>
-          <Link className={data.period.preset === "month" ? "is-active" : ""} href="/relatorios?periodo=month">Este mês</Link>
-        </div>
-        <form className="report-period-form" method="get">
-          <label>
-            <span>Período</span>
-            <select name="periodo" defaultValue={data.period.preset}>
-              <option value="today">Hoje</option>
-              <option value="7d">Últimos 7 dias</option>
-              <option value="30d">Últimos 30 dias</option>
-              <option value="month">Este mês</option>
-              <option value="custom">Personalizado</option>
-            </select>
-          </label>
-          <label>
-            <span>Data inicial</span>
-            <input name="inicio" type="date" defaultValue={data.period.from} />
-          </label>
-          <label>
-            <span>Data final</span>
-            <input name="fim" type="date" defaultValue={data.period.to} />
-          </label>
-          <button className="button button-secondary" type="submit"><BarChart3 size={16} />Gerar relatório</button>
-        </form>
-      </article>
+      <ReportPeriodFilter
+        preset={data.period.preset}
+        from={data.period.from}
+        to={data.period.to}
+      />
 
       {data.period.rangeClamped && (
         <div className="sale-feedback report-range-warning" role="status">

@@ -8,11 +8,11 @@ import {
   Pencil,
   Phone,
   Plus,
-  Search,
   UserRound,
   X,
 } from "lucide-react";
 import { RealtimeSuppliersSync } from "@/components/realtime-suppliers-sync";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   getSuppliersPageData,
@@ -179,34 +179,18 @@ export default async function SuppliersPage({
             <span className="table-count">{data.filteredSupplierCount} fornecedor(es)</span>
           </div>
 
-          <form className="customer-filters" method="get">
-            <label className="customer-search-field">
-              <span>Buscar fornecedor</span>
-              <div>
-                <Search size={16} />
-                <input
-                  name="busca"
-                  type="search"
-                  defaultValue={data.search}
-                  placeholder="Razão social, fantasia, contato ou CNPJ"
-                />
-              </div>
-            </label>
-            <label>
-              <span>Status</span>
-              <select name="status" defaultValue={data.status}>
-                <option value="all">Todos</option>
-                <option value="active">Ativos</option>
-                <option value="inactive">Inativos</option>
-              </select>
-            </label>
-            <button className="button button-secondary" type="submit">Aplicar filtros</button>
-            {(data.search || data.status !== "all") && (
-              <Link className="button button-secondary customer-clear-filter" href="/fornecedores">
-                <X size={15} />Limpar filtros
-              </Link>
-            )}
-          </form>
+          <AutoFilterForm
+            className="customer-filters"
+            clearClassName="customer-clear-filter"
+            fields={[
+              { type: "search", name: "busca", label: "Buscar fornecedor", value: data.search, placeholder: "Razão social, fantasia, contato ou CNPJ", className: "customer-search-field" },
+              { type: "select", name: "status", label: "Status", value: data.status, options: [
+                { value: "all", label: "Todos" },
+                { value: "active", label: "Ativos" },
+                { value: "inactive", label: "Inativos" },
+              ] },
+            ]}
+          />
 
           {data.suppliers.length ? (
             <div className="data-table-wrap">

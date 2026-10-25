@@ -52,3 +52,8 @@ itens recebidos, e recupera o histórico anterior pelos movimentos de estoque.
 A migration `20261025000517_implement_financial_management.sql` cria as operações
 transacionais de lançamentos e pagamentos, adiciona índices para a listagem do
 Financeiro e habilita categorias, lançamentos e pagamentos no Realtime.
+
+A migration `20261025120000_implement_cash_register_management.sql` implementa o
+caixa diário com abertura, entradas, saídas, sangria, suprimento e fechamento
+auditável. Ela integra vendas e pagamentos financeiros em dinheiro ao caixa aberto,
+protege as operações por funções transacionais e habilita as tabelas no Realtime.

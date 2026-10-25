@@ -6,6 +6,7 @@ import {
   BarChart3,
   Box,
   ClipboardList,
+  CircleDollarSign,
   LayoutDashboard,
   PackageOpen,
   ShoppingBag,
@@ -28,6 +29,7 @@ const mainItems = [
 const controlItems = [
   { href: "/compras", label: "Compras", icon: ClipboardList },
   { href: "/financeiro", label: "Financeiro", icon: WalletCards },
+  { href: "/caixa", label: "Caixa", icon: CircleDollarSign },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 

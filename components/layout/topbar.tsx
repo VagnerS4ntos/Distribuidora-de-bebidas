@@ -1,5 +1,6 @@
-import { Bell, CircleHelp, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { BrandMark } from "@/components/layout/brand-mark";
+import { TopbarActions } from "@/components/layout/topbar-actions";
 
 const roleLabels = {
   owner: "Proprietário",
@@ -10,9 +11,11 @@ const roleLabels = {
 export function Topbar({
   fullName = "Gestor",
   role,
+  organizationId,
 }: {
   fullName?: string;
   role?: keyof typeof roleLabels;
+  organizationId?: string;
 }) {
   const initials =
     fullName
@@ -29,16 +32,7 @@ export function Topbar({
         <BrandMark compact />
       </div>
       <div className="topbar-spacer" />
-      <button className="icon-button" aria-label="Ajuda">
-        <CircleHelp size={19} />
-      </button>
-      <button
-        className="icon-button notification-button"
-        aria-label="Notificações"
-      >
-        <Bell size={19} />
-        <span className="notification-dot" />
-      </button>
+      <TopbarActions organizationId={organizationId} />
       <span className="avatar">{initials}</span>
       <span className="profile-copy">
         <strong>{fullName}</strong>

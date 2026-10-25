@@ -9,11 +9,11 @@ import {
   PackageCheck,
   PackageOpen,
   PencilLine,
-  Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
 import { RealtimeInventorySync } from "@/components/realtime-inventory-sync";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getInventoryPageData } from "@/features/inventory/inventory-service";
 import { formatQuantity } from "@/lib/utils/format";
@@ -176,28 +176,17 @@ export default async function InventoryPage({
               <span className="table-count">{data.totalProducts} produto(s)</span>
             </div>
 
-            <form className="inventory-filters" method="get">
-              <label className="inventory-search-field">
-                <span>Buscar produto</span>
-                <div><Search size={16} /><input name="busca" type="search" defaultValue={data.search} placeholder="Nome do produto" /></div>
-              </label>
-              <label>
-                <span>Local de estoque</span>
-                <select name="local" defaultValue={data.selectedLocationId ?? ""}>
-                  <option value="">Todos os locais</option>
-                  {data.locations.map((location) => (
-                    <option key={location.id} value={location.id}>{location.name}</option>
-                  ))}
-                </select>
-              </label>
-              <button className="button button-secondary" type="submit">Aplicar filtros</button>
-              {(data.search || data.selectedLocationId) && (
-                <Link className="button button-secondary inventory-clear-filter" href="/estoques">
-                  <X size={15} />
-                  Limpar filtros
-                </Link>
-              )}
-            </form>
+            <AutoFilterForm
+              className="inventory-filters"
+              clearClassName="inventory-clear-filter"
+              fields={[
+                { type: "search", name: "busca", label: "Buscar produto", value: data.search, placeholder: "Nome do produto", className: "inventory-search-field" },
+                { type: "select", name: "local", label: "Local de estoque", value: data.selectedLocationId ?? "", defaultValue: "", options: [
+                  { value: "", label: "Todos os locais" },
+                  ...data.locations.map((location) => ({ value: location.id, label: location.name })),
+                ] },
+              ]}
+            />
 
             {data.products.length ? (
               <div className="data-table-wrap">

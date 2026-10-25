@@ -16,7 +16,11 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
       )}
       <Sidebar isOwner={member?.role === "owner"} />
       <div className="app-main">
-        <Topbar fullName={member?.fullName} role={member?.role} />
+        <Topbar
+          fullName={member?.fullName}
+          role={member?.role}
+          organizationId={member?.organizationId}
+        />
         <main className="page-content">{children}</main>
       </div>
     </div>

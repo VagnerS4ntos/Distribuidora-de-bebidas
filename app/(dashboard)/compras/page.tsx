@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { RealtimePurchasesSync } from "@/components/realtime-purchases-sync";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPurchasesPageData } from "@/features/purchases/purchase-service";
 import type { PurchaseStatusFilter } from "@/features/purchases/purchase-types";
@@ -132,23 +133,19 @@ export default async function PurchasesPage({
           <span className="table-count">{data.total} registro(s)</span>
         </div>
 
-        <form className="customer-filters purchase-filters" method="get">
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={data.status}>
-              <option value="all">Todos os pedidos</option>
-              <option value="open">A receber</option>
-              <option value="received">Recebidos</option>
-              <option value="cancelled">Cancelados</option>
-            </select>
-          </label>
-          <button className="button button-secondary" type="submit">Aplicar filtro</button>
-          {data.status !== "all" && (
-            <Link className="button button-secondary customer-clear-filter" href="/compras">
-              <X size={15} />Limpar filtro
-            </Link>
-          )}
-        </form>
+        <AutoFilterForm
+          className="customer-filters purchase-filters"
+          clearClassName="customer-clear-filter"
+          clearLabel="Limpar filtro"
+          fields={[
+            { type: "select", name: "status", label: "Status", value: data.status, options: [
+              { value: "all", label: "Todos os pedidos" },
+              { value: "open", label: "A receber" },
+              { value: "received", label: "Recebidos" },
+              { value: "cancelled", label: "Cancelados" },
+            ] },
+          ]}
+        />
 
         {data.purchases.length ? (
           <PurchasesHistoryTable purchases={data.purchases} locations={data.locations} />

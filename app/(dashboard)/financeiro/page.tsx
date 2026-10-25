@@ -5,11 +5,11 @@ import {
   CircleAlert,
   Landmark,
   Plus,
-  Search,
   WalletCards,
   X,
 } from "lucide-react";
 import { RealtimeFinancialSync } from "@/components/realtime-financial-sync";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getFinancialPageData } from "@/features/finance/finance-service";
 import type {
@@ -147,38 +147,24 @@ export default async function FinancePage({
           <span className="table-count">{data.total} registro(s)</span>
         </div>
 
-        <form className="customer-filters financial-filters" method="get">
-          <label className="customer-search-field">
-            <span>Buscar lançamento</span>
-            <div>
-              <Search size={16} />
-              <input name="busca" type="search" defaultValue={data.search} placeholder="Descrição ou referência" />
-            </div>
-          </label>
-          <label>
-            <span>Tipo</span>
-            <select name="tipo" defaultValue={data.type}>
-              <option value="all">Receitas e despesas</option>
-              <option value="income">Receitas</option>
-              <option value="expense">Despesas</option>
-            </select>
-          </label>
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={data.status}>
-              <option value="all">Todos</option>
-              <option value="open">Pendentes</option>
-              <option value="overdue">Atrasados</option>
-              <option value="paid">Quitados</option>
-            </select>
-          </label>
-          <button className="button button-secondary" type="submit">Aplicar filtros</button>
-          {hasFilters && (
-            <Link className="button button-secondary customer-clear-filter" href="/financeiro">
-              <X size={15} />Limpar filtros
-            </Link>
-          )}
-        </form>
+        <AutoFilterForm
+          className="customer-filters financial-filters"
+          clearClassName="customer-clear-filter"
+          fields={[
+            { type: "search", name: "busca", label: "Buscar lançamento", value: data.search, placeholder: "Descrição ou referência", className: "customer-search-field" },
+            { type: "select", name: "tipo", label: "Tipo", value: data.type, options: [
+              { value: "all", label: "Receitas e despesas" },
+              { value: "income", label: "Receitas" },
+              { value: "expense", label: "Despesas" },
+            ] },
+            { type: "select", name: "status", label: "Status", value: data.status, options: [
+              { value: "all", label: "Todos" },
+              { value: "open", label: "Pendentes" },
+              { value: "overdue", label: "Atrasados" },
+              { value: "paid", label: "Quitados" },
+            ] },
+          ]}
+        />
 
         {data.entries.length ? (
           <FinancialEntriesTable entries={data.entries} />
