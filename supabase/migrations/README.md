@@ -68,3 +68,8 @@ de acesso detalhada. Proprietários mantêm acesso completo; gerentes podem oper
 cadastros, estoque, compras, financeiro, caixa e relatórios sem gerenciar a equipe
 ou excluir registros; operadores podem consultar os dados e registrar vendas, sem
 alterar cadastros, estoque, compras, financeiro ou caixa.
+
+A migration `20261025200000_implement_audit_history.sql` transforma `audit_logs`
+em uma trilha imutável visível somente para proprietários e gerentes. Ela cria
+índices, captura automaticamente alterações de cadastros e financeiro por
+triggers e publica novos eventos no Realtime da tela **Auditoria**.

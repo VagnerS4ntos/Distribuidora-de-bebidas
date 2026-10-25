@@ -1176,6 +1176,194 @@ a {
   color: #a13f35;
   background: #fcece9;
 }
+
+.audit-panel {
+  overflow: hidden;
+}
+
+.audit-panel .panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(150px, 0.7fr)) repeat(2, minmax(140px, 0.6fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px 21px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+
+.audit-filters label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.audit-filters label > div {
+  position: relative;
+}
+
+.audit-filters label > div svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: var(--ink-faint);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.audit-filters input,
+.audit-filters select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.audit-filters input[type="search"] {
+  padding-left: 37px;
+}
+
+.audit-clear-filter {
+  height: 40px;
+  white-space: nowrap;
+}
+
+.audit-table td {
+  vertical-align: middle;
+}
+
+.audit-actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.audit-action {
+  display: inline-flex;
+  min-width: 78px;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.audit-action.is-created {
+  color: #087f70;
+  background: #e6f6f2;
+}
+
+.audit-action.is-updated {
+  color: #3f5f78;
+  background: #eaf1f6;
+}
+
+.audit-action.is-critical {
+  color: #a13f35;
+  background: #fcece9;
+}
+
+.audit-modal {
+  width: min(980px, 100%);
+}
+
+.audit-detail-meta {
+  margin-bottom: 14px;
+}
+
+.audit-record-reference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+
+.audit-record-reference span {
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+}
+
+.audit-record-reference code {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.audit-changes-heading h3 {
+  margin: 3px 0 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 15px;
+}
+
+.audit-change-list {
+  display: grid;
+  gap: 10px;
+}
+
+.audit-change-list > article {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.audit-change-list > article > strong {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 11px;
+}
+
+.audit-change-list > article > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.audit-change-list span {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 7px;
+  background: var(--surface-subtle);
+}
+
+.audit-change-list small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink-faint);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.audit-change-list pre {
+  overflow: auto;
+  margin: 0;
+  color: var(--ink-soft);
+  font: 10px/1.5 "IBM Plex Mono", monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .team-create-panel {
   margin-bottom: 18px;
   padding: 20px;
@@ -3141,6 +3329,40 @@ body:has(.sale-modal-backdrop) {
   }
   .auth-hero h1 {
     font-size: 36px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .audit-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .audit-search-field {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .audit-filters {
+    grid-template-columns: 1fr;
+    padding: 14px 16px;
+  }
+
+  .audit-search-field {
+    grid-column: auto;
+  }
+
+  .audit-clear-filter {
+    width: 100%;
+  }
+
+  .audit-change-list > article > div {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-record-reference {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 @media (max-width: 430px) {

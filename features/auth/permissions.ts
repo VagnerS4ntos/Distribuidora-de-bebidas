@@ -9,6 +9,7 @@ export type AppPermission =
   | "finance.manage"
   | "cash.manage"
   | "reports.view"
+  | "audit.view"
   | "team.manage"
   | "records.delete";
 
@@ -21,6 +22,7 @@ const allPermissions: AppPermission[] = [
   "finance.manage",
   "cash.manage",
   "reports.view",
+  "audit.view",
   "team.manage",
   "records.delete",
 ];
@@ -36,6 +38,7 @@ const rolePermissions: Record<OrganizationRole, ReadonlySet<AppPermission>> = {
     "finance.manage",
     "cash.manage",
     "reports.view",
+    "audit.view",
   ]),
   operator: new Set(["sales.create"]),
 };
@@ -86,6 +89,13 @@ export const accessMatrix = [
   {
     capability: "Relatórios gerenciais",
     description: "Indicadores consolidados e exportação",
+    owner: "Permitido",
+    manager: "Permitido",
+    operator: "Bloqueado",
+  },
+  {
+    capability: "Histórico de auditoria",
+    description: "Consultar quem alterou cada registro e comparar os dados",
     owner: "Permitido",
     manager: "Permitido",
     operator: "Bloqueado",

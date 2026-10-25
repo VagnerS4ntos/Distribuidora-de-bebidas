@@ -27,6 +27,14 @@ type FilterField =
       options: FilterOption[];
       className?: string;
       defaultValue?: string;
+    }
+  | {
+      type: "date";
+      name: string;
+      label: string;
+      value: string;
+      className?: string;
+      defaultValue?: string;
     };
 
 type FilterValues = Record<string, string>;
@@ -129,7 +137,7 @@ export function AutoFilterForm({
                 onChange={(event) => changeSearch(field.name, event.target.value)}
               />
             </div>
-          ) : (
+          ) : field.type === "select" ? (
             <select
               name={field.name}
               value={values[field.name] ?? field.defaultValue ?? "all"}
@@ -139,6 +147,13 @@ export function AutoFilterForm({
                 <option value={option.value} key={option.value}>{option.label}</option>
               ))}
             </select>
+          ) : (
+            <input
+              name={field.name}
+              type="date"
+              value={values[field.name] ?? ""}
+              onChange={(event) => changeSelect(field.name, event.target.value)}
+            />
           )}
         </label>
       ))}

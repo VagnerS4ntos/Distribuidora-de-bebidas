@@ -7,6 +7,7 @@ import {
   Box,
   ClipboardList,
   CircleDollarSign,
+  History,
   LayoutDashboard,
   PackageOpen,
   ShoppingBag,
@@ -33,6 +34,7 @@ const controlItems = [
   { href: "/financeiro", label: "Financeiro", icon: WalletCards },
   { href: "/caixa", label: "Caixa", icon: CircleDollarSign },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { href: "/auditoria", label: "Auditoria", icon: History },
 ];
 
 function NavPendingIndicator({ isCurrent }: { isCurrent: boolean }) {
@@ -68,7 +70,11 @@ function NavItems({
 export function Sidebar({ role }: { role?: OrganizationRole }) {
   const pathname = usePathname();
   const visibleControlItems = controlItems.filter(
-    (item) => item.href !== "/relatorios" || hasPermission(role, "reports.view"),
+    (item) => {
+      if (item.href === "/relatorios") return hasPermission(role, "reports.view");
+      if (item.href === "/auditoria") return hasPermission(role, "audit.view");
+      return true;
+    },
   );
 
   return (

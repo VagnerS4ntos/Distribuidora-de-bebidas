@@ -54,6 +54,30 @@ async function notifyTeamChanged(
   }
 }
 
+async function recordTeamAudit(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    organizationId: string;
+    actorId: string;
+    action: "insert" | "update" | "delete";
+    targetUserId: string;
+    oldData?: Record<string, unknown> | null;
+    newData?: Record<string, unknown> | null;
+  },
+) {
+  const { error } = await admin.from("audit_logs").insert({
+    organization_id: input.organizationId,
+    user_id: input.actorId,
+    action: input.action,
+    table_name: "organization_members",
+    record_id: input.targetUserId,
+    old_data: input.oldData ?? null,
+    new_data: input.newData ?? null,
+  });
+
+  if (error) console.error("Não foi possível registrar a auditoria da equipe.", error);
+}
+
 export async function createOrganizationUser(
   _previousState: CreateUserState,
   formData: FormData,
@@ -175,9 +199,18 @@ export async function createOrganizationUser(
     };
   }
 
+  await recordTeamAudit(admin, {
+    organizationId: membership.organization_id,
+    actorId: currentUser.id,
+    action: "insert",
+    targetUserId: createdUserId,
+    newData: { full_name: fullName, email, phone: phone || null, role },
+  });
+
   await notifyTeamChanged(admin, membership.organization_id);
 
   revalidatePath("/equipe");
+  revalidatePath("/auditoria");
   refresh();
   return {
     status: "success",
@@ -222,7 +255,7 @@ export async function deleteOrganizationUser(
 
   const { data: targetMembership, error: targetError } = await supabase
     .from("organization_members")
-    .select("user_id")
+    .select("user_id, role, profiles(full_name, phone)")
     .eq("organization_id", ownerMembership.organization_id)
     .eq("user_id", targetUserId)
     .maybeSingle();
@@ -245,6 +278,12 @@ export async function deleteOrganizationUser(
     };
   }
 
+  const { data: targetAuthData } = await admin.auth.admin.getUserById(targetMembership.user_id);
+  const targetProfile = targetMembership.profiles as {
+    full_name?: string | null;
+    phone?: string | null;
+  } | null;
+
   const { error: deleteError } = await admin.auth.admin.deleteUser(
     targetMembership.user_id,
     false,
@@ -263,9 +302,23 @@ export async function deleteOrganizationUser(
     };
   }
 
+  await recordTeamAudit(admin, {
+    organizationId: ownerMembership.organization_id,
+    actorId: currentUser.id,
+    action: "delete",
+    targetUserId: targetMembership.user_id,
+    oldData: {
+      full_name: targetProfile?.full_name ?? null,
+      email: targetAuthData.user?.email ?? null,
+      phone: targetProfile?.phone ?? null,
+      role: targetMembership.role,
+    },
+  });
+
   await notifyTeamChanged(admin, ownerMembership.organization_id);
 
   revalidatePath("/equipe");
+  revalidatePath("/auditoria");
   return {
     success: true,
     message: "Usuário excluído com sucesso.",
@@ -427,9 +480,29 @@ export async function updateOrganizationUser(
     };
   }
 
+  await recordTeamAudit(admin, {
+    organizationId: ownerMembership.organization_id,
+    actorId: currentUser.id,
+    action: "update",
+    targetUserId: input.userId,
+    oldData: {
+      full_name: profile.full_name,
+      email: originalEmail,
+      phone: profile.phone,
+      role: originalRole,
+    },
+    newData: {
+      full_name: fullName,
+      email,
+      phone: phone || null,
+      role: nextRole,
+    },
+  });
+
   await notifyTeamChanged(admin, ownerMembership.organization_id);
 
   revalidatePath("/equipe");
+  revalidatePath("/auditoria");
   refresh();
   return {
     success: true,
