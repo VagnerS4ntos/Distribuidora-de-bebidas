@@ -40,6 +40,35 @@ const allowedRoles = new Set<OrganizationRole>([
   "operator",
 ]);
 
+const lastOwnerMessage =
+  "Promova outro membro a Proprietário antes de rebaixar ou excluir o último proprietário da organização.";
+
+function isLastOwnerConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const databaseError = error as {
+    code?: string;
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
+  const combinedMessage = [
+    databaseError.message,
+    databaseError.details,
+    databaseError.hint,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    databaseError.code === "23514" &&
+    (combinedMessage.includes("proprietario") ||
+      combinedMessage.includes("proprietário") ||
+      combinedMessage.includes("owner"))
+  );
+}
+
 async function notifyTeamChanged(
   admin: ReturnType<typeof createAdminClient>,
   organizationId: string,
@@ -278,6 +307,25 @@ export async function deleteOrganizationUser(
     };
   }
 
+  if (targetMembership.role === "owner") {
+    const { count: ownerCount, error: ownerCountError } = await admin
+      .from("organization_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("organization_id", ownerMembership.organization_id)
+      .eq("role", "owner");
+
+    if (ownerCountError) {
+      return {
+        success: false,
+        message: "Não foi possível verificar os proprietários da organização.",
+      };
+    }
+
+    if ((ownerCount ?? 0) <= 1) {
+      return { success: false, message: lastOwnerMessage };
+    }
+  }
+
   const { data: targetAuthData } = await admin.auth.admin.getUserById(targetMembership.user_id);
   const targetProfile = targetMembership.profiles as {
     full_name?: string | null;
@@ -298,7 +346,9 @@ export async function deleteOrganizationUser(
       success: false,
       message: ownsStorageObjects
         ? "Esse usuário possui arquivos no Storage. Remova ou transfira esses arquivos antes de excluir a conta."
-        : "Não foi possível excluir a conta.",
+        : targetMembership.role === "owner"
+          ? `Não foi possível excluir este proprietário. ${lastOwnerMessage}`
+          : "Não foi possível excluir a conta.",
     };
   }
 
@@ -418,6 +468,25 @@ export async function updateOrganizationUser(
   const originalRole = targetMembership.role as OrganizationRole;
   const nextRole = input.role;
 
+  if (originalRole === "owner" && nextRole !== "owner") {
+    const { count: ownerCount, error: ownerCountError } = await admin
+      .from("organization_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("organization_id", ownerMembership.organization_id)
+      .eq("role", "owner");
+
+    if (ownerCountError) {
+      return {
+        success: false,
+        message: "Não foi possível verificar os proprietários da organização.",
+      };
+    }
+
+    if ((ownerCount ?? 0) <= 1) {
+      return { success: false, message: lastOwnerMessage };
+    }
+  }
+
   const { error: authUpdateError } = await admin.auth.admin.updateUserById(
     input.userId,
     {
@@ -457,6 +526,8 @@ export async function updateOrganizationUser(
           .eq("user_id", input.userId);
 
   if (profileError || roleError) {
+    const lastOwnerWasBlocked = isLastOwnerConstraintError(roleError);
+
     await Promise.all([
       admin.auth.admin.updateUserById(input.userId, {
         email: originalEmail,
@@ -475,8 +546,9 @@ export async function updateOrganizationUser(
 
     return {
       success: false,
-      message:
-        "A atualização não foi concluída e os dados anteriores foram restaurados.",
+      message: lastOwnerWasBlocked
+        ? lastOwnerMessage
+        : "A atualização não foi concluída e os dados anteriores foram restaurados.",
     };
   }
 

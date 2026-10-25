@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public, pg_catalog;
 
-select plan(108);
+select plan(112);
 
 -- Duas organizacoes independentes, cada uma com os tres perfis de acesso.
 -- O rollback final garante que os fixtures nunca persistam no banco.
@@ -154,6 +154,22 @@ begin
     $$insert into public.stock_movements (organization_id, location_id, product_id, movement_type, quantity_delta) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', '1a000000-0000-4000-8000-000000000001', '2a000000-0000-4000-8000-000000000001', 'adjustment_in', 1)$$,
     '42501', null, 'owner deve usar RPC para escrever em tabela transacional'
   );
+  return next extensions.throws_ok(
+    $$update public.organization_members set role = 'manager' where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1' and user_id = 'a0000000-0000-4000-8000-000000000001'$$,
+    '23514', null, 'ultimo owner nao pode ser rebaixado'
+  );
+  return next extensions.throws_ok(
+    $$delete from public.organization_members where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1' and user_id = 'a0000000-0000-4000-8000-000000000001'$$,
+    '23514', null, 'ultimo owner nao pode ser removido'
+  );
+  return next extensions.results_eq(
+    $$update public.organization_members set role = 'owner' where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1' and user_id = 'a0000000-0000-4000-8000-000000000002' returning user_id$$,
+    array['a0000000-0000-4000-8000-000000000002'::uuid], 'outro membro pode ser promovido a owner'
+  );
+  return next extensions.results_eq(
+    $$update public.organization_members set role = 'manager' where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1' and user_id = 'a0000000-0000-4000-8000-000000000001' returning user_id$$,
+    array['a0000000-0000-4000-8000-000000000001'::uuid], 'owner pode ser rebaixado quando existe outro proprietario'
+  );
 end;
 $function$;
 
@@ -267,6 +283,16 @@ set local role authenticated;
 select * from pg_temp.assert_role_reads('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2', 'owner', 'owner A', true);
 select * from pg_temp.assert_owner_writes();
 reset role;
+
+-- Restaura os perfis depois do teste de transferencia de propriedade.
+update public.organization_members
+set role = 'owner'
+where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+  and user_id = 'a0000000-0000-4000-8000-000000000001';
+update public.organization_members
+set role = 'manager'
+where organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+  and user_id = 'a0000000-0000-4000-8000-000000000002';
 
 do $$ begin perform set_config('request.jwt.claim.sub', 'a0000000-0000-4000-8000-000000000002', true); perform set_config('request.jwt.claim.role', 'authenticated', true); perform set_config('request.jwt.claims', '{"sub":"a0000000-0000-4000-8000-000000000002","role":"authenticated"}', true); end $$;
 set local role authenticated;

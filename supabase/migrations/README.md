@@ -90,3 +90,8 @@ movimentação. A leitura autenticada continua protegida por RLS, enquanto venda
 estoque, compras, financeiro, caixa e devoluções só podem ser alterados pelas RPCs
 validadas. A própria migration interrompe e reverte a aplicação se detectar uma
 permissão aberta ou uma RPC obrigatória ausente.
+
+A migration `20261025234114_prevent_last_owner_demotion.sql` impede que o último
+proprietário seja rebaixado, removido da equipe ou excluído em cascata pelo Auth.
+Operações concorrentes que retiram o papel de owner são serializadas no banco;
+o rebaixamento volta a ser permitido depois que outro membro é promovido.
