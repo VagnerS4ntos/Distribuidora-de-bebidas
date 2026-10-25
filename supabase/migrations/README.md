@@ -32,3 +32,23 @@ para a listagem por status e publica `public.customers` no Realtime.
 
 A migration `20261024163845_enable_suppliers_realtime.sql` adiciona um índice
 para a listagem por status e publica `public.suppliers` no Realtime.
+
+A migration `20261024165611_implement_purchase_management.sql` cria as operações
+transacionais de pedido e recebimento de compras, atualiza custo e estoque,
+gera a conta a pagar ao concluir e habilita as tabelas relacionadas no Realtime.
+
+A migration `20261024172800_add_purchase_request_and_receipt_dates.sql` permite
+informar a data da solicitação e a data de cada recebimento, refletindo a data
+escolhida nos movimentos de estoque e na conta a pagar gerada ao concluir.
+
+A migration `20261024234342_allow_backdated_purchase_receipts.sql` permite que
+um novo recebimento use uma data anterior a outro recebimento já registrado,
+mantendo apenas os limites da data da solicitação e da data atual.
+
+A migration `20261024234744_create_purchase_receipt_history.sql` cria o histórico
+de recebimentos parciais ligado ao pedido, incluindo data, local, responsável e
+itens recebidos, e recupera o histórico anterior pelos movimentos de estoque.
+
+A migration `20261025000517_implement_financial_management.sql` cria as operações
+transacionais de lançamentos e pagamentos, adiciona índices para a listagem do
+Financeiro e habilita categorias, lançamentos e pagamentos no Realtime.

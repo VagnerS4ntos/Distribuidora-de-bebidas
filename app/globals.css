@@ -1412,6 +1412,40 @@ a {
   width: 100%;
   margin-top: 3px;
 }
+.purchase-main-fields {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(190px, 1fr) minmax(155px, 0.65fr) minmax(155px, 0.65fr);
+  gap: 14px;
+  align-items: end;
+}
+.purchase-line {
+  grid-template-columns: 26px minmax(250px, 1.45fr) minmax(95px, 0.4fr) minmax(145px, 0.55fr) minmax(110px, 0.42fr) 38px;
+}
+.purchase-money-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  height: 39px;
+  padding-left: 9px;
+  color: var(--ink-faint);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 800;
+}
+.purchase-money-input:focus-within {
+  border-color: #f0a68c;
+  box-shadow: 0 0 0 3px var(--brand-pale);
+}
+.sale-form .purchase-money-input input {
+  height: 37px;
+  border: 0;
+  box-shadow: none;
+}
+.purchase-summary {
+  align-content: start;
+}
 .sale-feedback {
   display: flex;
   align-items: center;
@@ -1884,6 +1918,248 @@ body:has(.sale-modal-backdrop) {
   color: var(--brand-dark);
   font-family: "Manrope", sans-serif;
   font-size: 18px;
+}
+.purchase-filters {
+  grid-template-columns: minmax(190px, 260px) auto auto;
+  justify-content: start;
+}
+.purchase-document {
+  display: block;
+  max-width: 210px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.purchases-table td {
+  vertical-align: middle;
+}
+.purchase-modal {
+  width: min(980px, 100%);
+}
+.purchase-receive-section {
+  display: grid;
+  gap: 13px;
+  margin-top: 19px;
+  padding: 16px;
+  border: 1px solid #cce6e0;
+  border-radius: 9px;
+  background: #f3fbf9;
+}
+.purchase-receipts-heading {
+  margin-top: 21px;
+}
+.purchase-receipts-list {
+  display: grid;
+  gap: 10px;
+}
+.purchase-receipt-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+.purchase-receipt-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+.purchase-receipt-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--teal);
+}
+.purchase-receipt-date > span {
+  display: grid;
+  gap: 1px;
+}
+.purchase-receipt-date small,
+.purchase-receipt-meta span,
+.purchase-receipt-items small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+.purchase-receipt-date strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+.purchase-receipt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px 14px;
+}
+.purchase-receipt-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.purchase-receipt-items {
+  display: grid;
+}
+.purchase-receipt-items > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 9px 13px;
+  border-top: 1px solid #edf0f2;
+}
+.purchase-receipt-items > div:first-child {
+  border-top: 0;
+}
+.purchase-receipt-items > div > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.purchase-receipt-items strong {
+  font-size: 10px;
+}
+.purchase-receipt-items > div > strong {
+  flex: 0 0 auto;
+  color: var(--teal);
+  font-size: 11px;
+}
+.purchase-receipts-empty {
+  min-height: 76px;
+}
+.purchase-receive-section .sale-detail-section-head {
+  margin: 0;
+}
+.purchase-receive-fields {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(155px, 0.7fr) minmax(170px, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  width: 100%;
+}
+.purchase-receive-location,
+.purchase-receive-date {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+.purchase-receive-location select,
+.purchase-receive-date input,
+.purchase-receive-lines input {
+  width: 100%;
+  height: 39px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+}
+.purchase-receive-location select:focus,
+.purchase-receive-date input:focus,
+.purchase-receive-lines input:focus {
+  border-color: #7fc4b6;
+  box-shadow: 0 0 0 3px var(--teal-pale);
+}
+.purchase-receive-lines {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+.purchase-receive-lines label {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+.purchase-receive-lines label > span {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 7px;
+  min-height: 14px;
+}
+.purchase-receive-lines strong,
+.purchase-receive-lines small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.purchase-receive-lines strong {
+  font-size: 10px;
+}
+.purchase-receive-lines small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+.purchase-receive-section .sale-feedback {
+  margin: 0;
+}
+.purchase-status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.inventory-status.is-overdue {
+  gap: 4px;
+  color: #a3443b;
+  background: #fdecea;
+}
+.purchase-overdue-card {
+  border-color: #efc5c0 !important;
+  background: #fff5f3 !important;
+}
+.purchase-overdue-card > strong {
+  color: #a3443b;
+}
+.purchase-overdue-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #a3443b !important;
+  font-weight: 700;
+}
+.purchase-overdue-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: -10px 0 20px;
+  padding: 11px 13px;
+  color: #913b33;
+  border: 1px solid #efc5c0;
+  border-radius: 8px;
+  background: #fff1ef;
+}
+.purchase-overdue-warning > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.purchase-overdue-warning > div {
+  display: grid;
+  gap: 2px;
+}
+.purchase-overdue-warning strong {
+  font-size: 11px;
+}
+.purchase-overdue-warning span {
+  font-size: 10px;
+  line-height: 1.45;
+}
+.purchase-receive-actions {
+  display: flex;
+  align-items: flex-end;
+}
+.purchase-receive-submit {
+  min-width: 220px;
+  min-height: 40px;
 }
 .inventory-stat-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2741,5 +3017,537 @@ body:has(.sale-modal-backdrop) {
 @media (max-width: 430px) {
   .inventory-stat-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1120px) {
+  .purchase-main-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .purchase-line {
+    grid-template-columns: 26px minmax(220px, 1fr) 95px 145px 38px;
+  }
+}
+
+@media (max-width: 760px) {
+  .purchase-main-fields,
+  .purchase-filters,
+  .purchase-receive-fields,
+  .purchase-receive-lines {
+    grid-template-columns: 1fr;
+  }
+  .purchase-filters .button {
+    width: 100%;
+  }
+  .purchase-line {
+    grid-template-columns: 25px minmax(90px, 1fr) minmax(110px, 1fr) 38px;
+  }
+  .purchase-line .sale-line-number {
+    grid-row: 1 / 3;
+  }
+  .purchase-line .sale-product-field {
+    grid-column: 2 / 4;
+  }
+  .purchase-line > label:nth-of-type(2) {
+    grid-column: 2;
+  }
+  .purchase-line > label:nth-of-type(3) {
+    grid-column: 3;
+  }
+  .purchase-line > .danger-button {
+    grid-column: 4;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .purchase-receive-lines label {
+    grid-template-columns: 1fr;
+  }
+  .purchase-receive-actions {
+    width: 100%;
+  }
+  .purchase-receive-submit {
+    width: 100%;
+    min-width: 0;
+  }
+  .purchase-receipt-card > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .purchase-receipt-meta {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 430px) {
+  .purchase-line {
+    grid-template-columns: minmax(90px, 1fr) minmax(105px, 0.8fr) 36px;
+  }
+  .purchase-line .sale-product-field {
+    grid-column: 1 / 3;
+  }
+  .purchase-line > label:nth-of-type(2) {
+    grid-column: 1;
+  }
+  .purchase-line > label:nth-of-type(3) {
+    grid-column: 2;
+  }
+  .purchase-line > .danger-button {
+    grid-column: 3;
+  }
+}
+
+/* Aumenta discretamente a legibilidade do conteúdo sem alterar a barra lateral. */
+.app-main .page-heading h1 {
+  font-size: clamp(28px, 3vw, 34px);
+}
+
+.app-main .page-heading p {
+  font-size: 15px;
+}
+
+.app-main :is(
+    .panel-head h2,
+    .sale-form-head h2,
+    .product-form-head h2,
+    .sale-modal-head h2,
+    .inventory-form-head h2,
+    .customer-form-head h2
+  ) {
+  font-size: 19px;
+}
+
+.app-main :is(.module-placeholder h2, .sale-items-head h3) {
+  font-size: 20px;
+}
+
+.app-main .button {
+  font-size: 14px;
+}
+
+.app-main :is(input, select, textarea) {
+  font-size: 13px;
+}
+
+.app-main .data-table {
+  font-size: 13px;
+}
+
+.app-main :is(
+    .profile-copy strong,
+    .metric-card-head span,
+    .empty-state strong,
+    .module-stat span,
+    .module-links strong,
+    .product-cell strong,
+    .team-invite-copy strong,
+    .team-person strong,
+    .sale-line-info strong
+  ) {
+  font-size: 13px;
+}
+
+.app-main :is(
+    .profile-copy small,
+    .metric-card p,
+    .text-link,
+    .stock-alert-copy strong,
+    .empty-state p,
+    .module-stat small,
+    .module-info,
+    .auth-footnote,
+    .table-count,
+    .sale-code,
+    .team-feedback,
+    .sale-form-head p,
+    .sale-summary > div,
+    .product-form-head p,
+    .sales-page-button,
+    .products-page-button,
+    .sales-pagination,
+    .products-pagination,
+    .sale-modal-state span,
+    .sale-detail-meta strong,
+    .sale-detail-empty,
+    .sale-detail-notes p,
+    .sale-detail-summary > div,
+    .purchase-receipt-date strong,
+    .purchase-receipt-items > div > strong,
+    .purchase-overdue-warning strong,
+    .inventory-form-head p,
+    .inventory-difference,
+    .inventory-form-empty,
+    .movement-quantity,
+    .customer-form-head p,
+    .customer-active-check strong
+  ) {
+  font-size: 12px;
+}
+
+.app-main :is(
+    .eyebrow,
+    .demo-badge,
+    .stock-alert-copy small,
+    .stock-minimum,
+    .module-links small,
+    .create-user-fields label,
+    .team-invite label,
+    .role-badge,
+    .sale-form label,
+    .sale-line-number,
+    .product-form-grid label,
+    .product-form-section-title p,
+    .product-check strong,
+    .purchase-receive-location,
+    .purchase-receive-date,
+    .purchase-receipt-items strong,
+    .purchase-receive-lines strong,
+    .purchase-overdue-warning span,
+    .inventory-adjustment-grid label,
+    .inventory-filters label,
+    .inventory-location-list small,
+    .movement-kind,
+    .customer-form-grid label:not(.customer-active-check),
+    .customer-filters label,
+    .customer-contact span
+  ) {
+  font-size: 11px;
+}
+
+.app-main :is(
+    .panel-kicker,
+    .data-table th,
+    .status-badge,
+    .stock-hint,
+    .team-person small,
+    .sale-line-info > span,
+    .sale-line-info small,
+    .product-check small,
+    .sale-detail-meta span,
+    .sale-detail-notes > span,
+    .sale-detail-meta small,
+    .sale-detail-table td:first-child small,
+    .purchase-document,
+    .purchase-receipt-date small,
+    .purchase-receipt-meta span,
+    .purchase-receipt-items small,
+    .purchase-receive-lines small,
+    .inventory-status,
+    .movement-note,
+    .customer-active-check small
+  ) {
+  font-size: 10px;
+}
+
+/* Financeiro */
+.financial-form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.financial-description-field {
+  grid-column: span 2;
+}
+.financial-form-grid select {
+  width: 100%;
+  height: 39px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+.financial-form-grid select:focus {
+  border-color: #f0a68c;
+  box-shadow: 0 0 0 3px var(--brand-pale);
+}
+.financial-form-grid select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.financial-paid-check input {
+  accent-color: var(--teal);
+}
+.financial-stat-grid {
+  margin-bottom: 21px;
+}
+.financial-stat-grid .financial-income {
+  color: var(--teal);
+}
+.financial-stat-grid .financial-expense {
+  color: var(--brand-dark);
+}
+.financial-stat-alert {
+  border-color: #efc5c0;
+  background: #fffafa;
+}
+.financial-stat-alert small {
+  color: #a3443b;
+  font-weight: 700;
+}
+.financial-filters {
+  grid-template-columns: minmax(260px, 1fr) minmax(160px, 0.3fr) minmax(145px, 0.28fr) auto auto;
+}
+.financial-entry-cell,
+.financial-amount-cell {
+  display: grid;
+  gap: 3px;
+}
+.financial-entry-cell {
+  min-width: 220px;
+}
+.financial-entry-cell small,
+.financial-amount-cell small {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+.financial-amount-cell {
+  justify-items: end;
+  min-width: 160px;
+}
+.financial-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.financial-type-badge.is-income,
+.financial-type-icon.is-income {
+  color: #007f73;
+  background: var(--teal-pale);
+}
+.financial-type-badge.is-expense,
+.financial-type-icon.is-expense {
+  color: var(--brand-dark);
+  background: var(--brand-pale);
+}
+.financial-due-overdue {
+  display: table-cell;
+  color: #a3443b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.financial-due-overdue svg {
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+.financial-modal {
+  width: min(980px, 100%);
+}
+.financial-detail-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.financial-type-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 10px;
+}
+.financial-detail-title > div {
+  display: grid;
+  gap: 2px;
+}
+.financial-detail-title span,
+.financial-detail-title small {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+.financial-detail-title h3 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 18px;
+}
+.financial-detail-title > strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 21px;
+}
+.financial-income {
+  color: var(--teal);
+}
+.financial-expense {
+  color: var(--brand-dark);
+}
+.financial-overdue-warning {
+  margin: 16px 0 0;
+}
+.financial-detail-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
+}
+.financial-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.financial-balance-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+.financial-balance-grid span {
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.financial-balance-grid strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 17px;
+}
+.financial-balance-grid .is-pending {
+  border-color: #f0c6b8;
+  background: #fff8f5;
+}
+.financial-balance-grid .is-pending strong {
+  color: var(--brand-dark);
+}
+.financial-balance-grid .is-settled strong {
+  color: var(--teal);
+}
+.financial-payments-heading {
+  margin-top: 20px;
+}
+.financial-payment-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.financial-payment-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 58px;
+  padding: 10px 13px;
+  border-top: 1px solid var(--line);
+}
+.financial-payment-list article:first-child {
+  border-top: 0;
+}
+.financial-payment-icon {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--teal);
+  border-radius: 8px;
+  background: var(--teal-pale);
+}
+.financial-payment-list article > div {
+  display: grid;
+  gap: 2px;
+}
+.financial-payment-list small {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+.financial-payment-list p {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+.financial-payment-list article > strong {
+  color: var(--teal);
+  white-space: nowrap;
+}
+.financial-payment-form {
+  margin-top: 18px;
+}
+.financial-payment-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.65fr) minmax(145px, 0.7fr) minmax(170px, 1fr) minmax(150px, 0.9fr);
+  align-items: end;
+  gap: 12px;
+}
+.financial-payment-fields label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+.financial-payment-fields input,
+.financial-payment-fields select {
+  width: 100%;
+  height: 39px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+  font-size: 13px;
+}
+.financial-payment-fields input:focus,
+.financial-payment-fields select:focus {
+  border-color: #7fc4b6;
+  box-shadow: 0 0 0 3px var(--teal-pale);
+}
+.financial-payment-notes {
+  grid-column: 1 / -2;
+}
+.financial-payment-fields .button {
+  min-height: 39px;
+}
+.financial-payments-empty {
+  min-height: 76px;
+}
+.financial-entry-notes {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+}
+
+@media (max-width: 1120px) {
+  .financial-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .financial-payment-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .financial-payment-notes {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .financial-form-grid,
+  .financial-filters,
+  .financial-detail-meta,
+  .financial-balance-grid,
+  .financial-payment-fields {
+    grid-template-columns: 1fr;
+  }
+  .financial-description-field,
+  .financial-payment-notes {
+    grid-column: auto;
+  }
+  .financial-filters .button,
+  .financial-payment-fields .button {
+    width: 100%;
+  }
+  .financial-detail-title {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .financial-detail-title > strong {
+    grid-column: 1 / -1;
   }
 }
