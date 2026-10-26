@@ -29,12 +29,13 @@ export default async function TeamPage({
 
   const managers = data.members.filter((member) => member.role === "manager").length;
   const owners = data.members.filter((member) => member.role === "owner").length;
+  const canManageTeam = data.currentMember.role === "owner";
 
   return (
     <>
       <section className="page-heading">
-        <div><span className="eyebrow">Administração</span><h1>Equipe e acessos</h1><p>Gerencie quem pode operar a {data.currentMember.organizationName} e defina o nível de acesso de cada pessoa.</p></div>
-        <span className="owner-only-badge"><ShieldCheck size={16} />Exclusivo para owner</span>
+        <div><span className="eyebrow">Administração</span><h1>Equipe e acessos</h1><p>{canManageTeam ? `Gerencie quem pode operar a ${data.currentMember.organizationName} e defina o nível de acesso de cada pessoa.` : `Consulte os membros e os níveis de acesso da ${data.currentMember.organizationName}.`}</p></div>
+        <span className="owner-only-badge"><ShieldCheck size={16} />{canManageTeam ? "Acesso administrativo" : "Modo de consulta"}</span>
       </section>
       <section className="module-stat-grid">
         <article className="module-stat"><span>Total de membros</span><strong>{formatNumber(data.members.length)}</strong><small>Usuários vinculados à organização</small></article>
@@ -63,7 +64,7 @@ export default async function TeamPage({
                 <tr key={row.capability}>
                   <td><strong>{row.capability}</strong><small>{row.description}</small></td>
                   <td><span className="access-level is-allowed">{row.owner}</span></td>
-                  <td><span className={`access-level is-${row.manager === "Bloqueado" ? "blocked" : "allowed"}`}>{row.manager}</span></td>
+                  <td><span className={`access-level is-${row.manager === "Somente leitura" ? "readonly" : "allowed"}`}>{row.manager}</span></td>
                   <td><span className={`access-level is-${row.operator === "Bloqueado" ? "blocked" : row.operator === "Somente leitura" ? "readonly" : "allowed"}`}>{row.operator}</span></td>
                 </tr>
               ))}
@@ -71,15 +72,18 @@ export default async function TeamPage({
           </table>
         </div>
       </article>
-      <article className="panel team-create-panel">
-        <CreateUserForm adminConfigured={isSupabaseAdminConfigured()} />
-      </article>
+      {canManageTeam && (
+        <article className="panel team-create-panel">
+          <CreateUserForm adminConfigured={isSupabaseAdminConfigured()} />
+        </article>
+      )}
       <article className="panel team-panel">
         <div className="panel-head"><div><span className="panel-kicker">Controle de acesso</span><h2><UserCog size={18} /> Membros da organização</h2></div><span className="table-count"><UsersRound size={14} /> {data.members.length} membro(s)</span></div>
         <TeamManager
           initialMembers={data.members}
           currentUserId={data.currentMember.userId}
-          editingUserId={editingUserId}
+          editingUserId={canManageTeam ? editingUserId : null}
+          canManage={canManageTeam}
         />
       </article>
     </>

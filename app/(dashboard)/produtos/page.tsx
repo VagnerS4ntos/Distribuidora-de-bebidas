@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { RealtimeProductsSync } from "@/components/realtime-products-sync";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getProductsPageData } from "@/features/products/product-service";
 import { formatCurrency, formatNumber } from "@/lib/utils/format";
@@ -26,12 +27,14 @@ export default async function ProductsPage({
     editar?: string;
     atualizado?: string;
     pagina?: string;
+    local?: string;
   }>;
 }) {
   const params = await searchParams;
   const requestedPage = Number(params.pagina);
   const data = await getProductsPageData({
     page: Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1,
+    locationId: params.local,
   });
   const editingProduct = data.canEditProducts
     ? data.products.find((product) => product.id === params.editar)
@@ -39,12 +42,20 @@ export default async function ProductsPage({
   const showNewProduct =
     params.novo === "1" && data.canEditProducts && !editingProduct;
   const showProductForm = showNewProduct || Boolean(editingProduct);
-  const pageHref = (page: number) =>
-    page > 1 ? `/produtos?pagina=${page}` : "/produtos";
-  const newProductHref =
-    data.page > 1
-      ? `/produtos?novo=1&pagina=${data.page}`
-      : "/produtos?novo=1";
+  const listParams = new URLSearchParams();
+  if (data.selectedLocationId) {
+    listParams.set("local", data.selectedLocationId);
+  }
+  if (data.page > 1) listParams.set("pagina", String(data.page));
+  const pageHref = (page: number) => {
+    const query = new URLSearchParams(listParams);
+    query.delete("pagina");
+    if (page > 1) query.set("pagina", String(page));
+    return query.size ? `/produtos?${query}` : "/produtos";
+  };
+  const newProductParams = new URLSearchParams(listParams);
+  newProductParams.set("novo", "1");
+  const newProductHref = `/produtos?${newProductParams}`;
   const firstProduct =
     data.totalProducts > 0 ? (data.page - 1) * data.pageSize + 1 : 0;
   const lastProduct = Math.min(
@@ -102,6 +113,7 @@ export default async function ProductsPage({
             locations={data.locations}
             product={editingProduct}
             page={data.page}
+            locationId={data.selectedLocationId}
           />
         </article>
       )}
@@ -126,6 +138,27 @@ export default async function ProductsPage({
             <div><span className="panel-kicker">Catálogo</span><h2>Todos os produtos</h2></div>
             <span className="table-count">{data.totalProducts} item(ns)</span>
           </div>
+          <AutoFilterForm
+            className="products-filters"
+            clearClassName="products-clear-filter"
+            clearLabel="Limpar filtro"
+            fields={[
+              {
+                type: "select",
+                name: "local",
+                label: "Local de estoque",
+                value: data.selectedLocationId ?? "",
+                defaultValue: "",
+                options: [
+                  { value: "", label: "Todos os locais" },
+                  ...data.locations.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  })),
+                ],
+              },
+            ]}
+          />
           {data.products.length ? (
             <div className="data-table-wrap">
               <table className="data-table products-table">
@@ -145,7 +178,11 @@ export default async function ProductsPage({
                         {data.canEditProducts && (
                           <td className="align-right">
                             <Link
-                              href={`/produtos?editar=${encodeURIComponent(product.id)}${data.page > 1 ? `&pagina=${data.page}` : ""}`}
+                              href={`/produtos?${new URLSearchParams({
+                                ...(data.selectedLocationId ? { local: data.selectedLocationId } : {}),
+                                ...(data.page > 1 ? { pagina: String(data.page) } : {}),
+                                editar: product.id,
+                              })}`}
                               className="icon-button product-edit-button"
                               aria-label={`Editar ${product.name}`}
                               title="Editar produto"

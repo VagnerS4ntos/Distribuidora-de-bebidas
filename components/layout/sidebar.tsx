@@ -87,7 +87,7 @@ export function Sidebar({ role }: { role?: OrganizationRole }) {
         <NavItems items={mainItems} pathname={pathname} />
         <p className="side-section-label side-section-gap">Gestão</p>
         <NavItems items={visibleControlItems} pathname={pathname} />
-        {hasPermission(role, "team.manage") && (
+        {hasPermission(role, "team.view") && (
           <NavItems
             items={[{ href: "/equipe", label: "Equipe", icon: UserCog }]}
             pathname={pathname}

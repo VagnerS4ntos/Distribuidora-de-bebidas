@@ -23,7 +23,7 @@ Sem o Supabase configurado, o painel abre com dados de demonstração. Com as va
 
 O arquivo `SQL Editor.txt` é a fonte de verdade inicial do banco; ele já inclui RLS e os módulos de estoque, caixa, compras, vendas, financeiro, retornáveis e auditoria.
 
-O módulo **Equipe** é exibido somente para membros com papel `owner`. A migration `20261021213237_owner_manage_profiles.sql` permite que membros da mesma organização apareçam com nome e telefone, sem expor perfis de outras organizações.
+O módulo **Equipe** é exibido para membros com papel `owner` ou `manager`. Gerentes possuem acesso somente para consulta; criação de contas, edição de dados e perfis e exclusões continuam exclusivas de proprietários. A migration `20261021213237_owner_manage_profiles.sql` permite que membros da mesma organização apareçam com nome e telefone, sem expor perfis de outras organizações.
 
 ## Criação de usuários
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentMember, type OrganizationRole } from "@/features/auth/current-member";
+import { hasPermission } from "@/features/auth/permissions";
 import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,10 +16,10 @@ export type TeamMember = {
 
 export async function getTeamPageData() {
   const currentMember = await getCurrentMember();
-  if (!currentMember || currentMember.role !== "owner") return null;
+  if (!currentMember || !hasPermission(currentMember.role, "team.view")) return null;
 
   const supabase = await createClient();
-  // O owner já foi autenticado acima. A leitura administrativa fica no servidor
+  // O membro autorizado já foi autenticado acima. A leitura fica no servidor
   // e continua limitada aos membros da organização atual.
   const admin = isSupabaseAdminConfigured() ? createAdminClient() : null;
   const teamClient = admin ?? supabase;

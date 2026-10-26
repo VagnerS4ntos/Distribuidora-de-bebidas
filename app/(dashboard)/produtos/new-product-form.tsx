@@ -27,11 +27,13 @@ export function NewProductForm({
   locations,
   product,
   page,
+  locationId,
 }: {
   categories: ProductCategory[];
   locations: ProductStockLocation[];
   product?: ProductListItem;
   page: number;
+  locationId?: string | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -95,6 +97,7 @@ export function NewProductForm({
         [product ? "atualizado" : "criado"]: result.productId.slice(0, 8),
       });
       if (page > 1) query.set("pagina", String(page));
+      if (locationId) query.set("local", locationId);
       router.replace(`/produtos?${query.toString()}`);
       router.refresh();
     } catch {
@@ -223,7 +226,11 @@ export function NewProductForm({
                 Local de estoque
                 <select
                   name="locationId"
-                  defaultValue={locations[0]?.id ?? ""}
+                  defaultValue={
+                    locations.some((location) => location.id === locationId)
+                      ? locationId ?? ""
+                      : locations[0]?.id ?? ""
+                  }
                   disabled={busy || Number(initialQuantity) === 0}
                 >
                   {locations.map((location) => (

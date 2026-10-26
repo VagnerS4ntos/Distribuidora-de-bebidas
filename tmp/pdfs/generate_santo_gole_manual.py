@@ -384,7 +384,7 @@ def role_table():
         ["Financeiro e caixa", "Gerenciar", "Gerenciar", "Somente leitura"],
         ["Relatórios", "Acesso", "Acesso", "Sem acesso"],
         ["Auditoria", "Acesso", "Acesso", "Sem acesso"],
-        ["Equipe e exclusões", "Gerenciar", "Sem acesso", "Sem acesso"],
+        ["Equipe e exclusões", "Gerenciar", "Consultar", "Sem acesso"],
     ]
     formatted = []
     for row_index, row in enumerate(data):
@@ -903,7 +903,7 @@ story.extend(
 story.extend(
     [
         p("Equipe", "ChapterTitle"),
-        p("Área exclusiva do proprietário para criar contas, atualizar dados, alterar perfis e remover acessos.", "ChapterIntro"),
+        p("Proprietários administram contas e acessos. Gerentes podem consultar a lista de membros e os níveis de permissão, sem realizar alterações.", "ChapterIntro"),
         p("Criar um usuário", "SectionHeading"),
         steps(
             [
@@ -935,7 +935,7 @@ story.extend(
         role_table(),
         Spacer(1, 12),
         callout("Proprietário", "Acesso completo à operação, relatórios, auditoria, equipe e exclusões.", "tip"),
-        callout("Gerente", "Opera vendas, cadastros, estoque, compras, financeiro, caixa e relatórios. Não gerencia a equipe nem exclui registros.", "info"),
+        callout("Gerente", "Opera vendas, cadastros, estoque, compras, financeiro, caixa e relatórios. Pode consultar a aba Equipe, mas não cria, edita ou exclui usuários.", "info"),
         callout("Operador", "Registra vendas e consulta dados operacionais. Não altera cadastros, estoque, compras, financeiro ou caixa.", "warning"),
         p("Quando uma opção não aparecer", "SectionHeading"),
         p("Isso normalmente significa que o perfil atual não possui permissão para aquela ação. Se a atividade fizer parte da função da pessoa, solicite ao proprietário a revisão do perfil na aba Equipe."),

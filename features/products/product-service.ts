@@ -3,6 +3,8 @@ import { getCurrentMember } from "@/features/auth/current-member";
 import { hasPermission } from "@/features/auth/permissions";
 
 const PRODUCTS_PAGE_SIZE = 10;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type ProductListItem = {
   id: string;
@@ -37,6 +39,7 @@ export type ProductsPageData = {
   products: ProductListItem[];
   categories: ProductCategory[];
   locations: ProductStockLocation[];
+  selectedLocationId: string | null;
   categoryCount: number;
   totalProducts: number;
   activeProductCount: number;
@@ -57,8 +60,10 @@ function asNumber(value: unknown) {
 
 export async function getProductsPageData({
   page = 1,
+  locationId,
 }: {
   page?: number;
+  locationId?: string | null;
 } = {}): Promise<ProductsPageData> {
   const supabase = await createClient();
   const membership = await getCurrentMember();
@@ -68,6 +73,7 @@ export async function getProductsPageData({
       products: [],
       categories: [],
       locations: [],
+      selectedLocationId: null,
       categoryCount: 0,
       totalProducts: 0,
       activeProductCount: 0,
@@ -84,13 +90,30 @@ export async function getProductsPageData({
 
   const organizationId = membership.organizationId;
   const requestedPage = Number.isInteger(page) && page > 0 ? page : 1;
+  const normalizedLocationId =
+    locationId && uuidPattern.test(locationId) ? locationId : null;
+  const { data: locations, error: locationsError } = await supabase
+    .from("stock_locations")
+    .select("id, name")
+    .eq("organization_id", organizationId)
+    .eq("active", true)
+    .order("name");
+
+  if (locationsError) throw locationsError;
+
+  const availableLocations = locations ?? [];
+  const selectedLocationId = availableLocations.some(
+    (location) => location.id === normalizedLocationId,
+  )
+    ? normalizedLocationId
+    : null;
   const requestedFrom = (requestedPage - 1) * PRODUCTS_PAGE_SIZE;
   const requestedTo = requestedFrom + PRODUCTS_PAGE_SIZE - 1;
-  const getProductsRange = (from: number, to: number) =>
-    supabase
+  const getProductsRange = (from: number, to: number) => {
+    let query = supabase
       .from("products")
       .select(
-        "id, name, brand, description, barcode, sku, category_id, unit, units_per_package, cost_price, sale_price, min_stock, is_returnable, active, categories(name), inventory_balances(quantity_on_hand)",
+        "id, name, brand, description, barcode, sku, category_id, unit, units_per_package, cost_price, sale_price, min_stock, is_returnable, active, categories(name), inventory_balances(location_id, quantity_on_hand)",
         { count: "exact" },
       )
       .eq("organization_id", organizationId)
@@ -98,10 +121,16 @@ export async function getProductsPageData({
       .order("id")
       .range(from, to);
 
+    if (selectedLocationId) {
+      query = query.eq("inventory_balances.location_id", selectedLocationId);
+    }
+
+    return query;
+  };
+
   const [
     initialProductsResult,
     { data: categories, error: categoriesError },
-    { data: locations, error: locationsError },
     { count: activeProductCount, error: activeCountError },
     { count: returnableProductCount, error: returnableCountError },
   ] =
@@ -111,12 +140,6 @@ export async function getProductsPageData({
         .from("categories")
         .select("id, name")
         .eq("organization_id", organizationId)
-        .order("name"),
-      supabase
-        .from("stock_locations")
-        .select("id, name")
-        .eq("organization_id", organizationId)
-        .eq("active", true)
         .order("name"),
       supabase
         .from("products")
@@ -132,7 +155,6 @@ export async function getProductsPageData({
 
   if (initialProductsResult.error) throw initialProductsResult.error;
   if (categoriesError) throw categoriesError;
-  if (locationsError) throw locationsError;
   if (activeCountError) throw activeCountError;
   if (returnableCountError) throw returnableCountError;
 
@@ -154,6 +176,7 @@ export async function getProductsPageData({
   return {
     products: (products ?? []).map((product) => {
       const balances = (product.inventory_balances ?? []) as Array<{
+        location_id: string;
         quantity_on_hand: number | string;
       }>;
       return {
@@ -180,7 +203,8 @@ export async function getProductsPageData({
       };
     }),
     categories: categories ?? [],
-    locations: locations ?? [],
+    locations: availableLocations,
+    selectedLocationId,
     categoryCount: categories?.length ?? 0,
     totalProducts,
     activeProductCount: activeProductCount ?? 0,

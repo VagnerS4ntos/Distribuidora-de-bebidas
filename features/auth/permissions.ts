@@ -10,6 +10,7 @@ export type AppPermission =
   | "cash.manage"
   | "reports.view"
   | "audit.view"
+  | "team.view"
   | "team.manage"
   | "records.delete";
 
@@ -23,6 +24,7 @@ const allPermissions: AppPermission[] = [
   "cash.manage",
   "reports.view",
   "audit.view",
+  "team.view",
   "team.manage",
   "records.delete",
 ];
@@ -39,6 +41,7 @@ const rolePermissions: Record<OrganizationRole, ReadonlySet<AppPermission>> = {
     "cash.manage",
     "reports.view",
     "audit.view",
+    "team.view",
   ]),
   operator: new Set(["sales.create"]),
 };
@@ -109,9 +112,9 @@ export const accessMatrix = [
   },
   {
     capability: "Equipe e exclusões",
-    description: "Gerenciar usuários, papéis e excluir registros",
+    description: "Consultar membros; somente proprietários gerenciam usuários, papéis e exclusões",
     owner: "Permitido",
-    manager: "Bloqueado",
+    manager: "Somente leitura",
     operator: "Bloqueado",
   },
 ] as const;

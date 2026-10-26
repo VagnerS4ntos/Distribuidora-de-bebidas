@@ -1409,14 +1409,103 @@ a {
   border-color: #f0a68c;
   box-shadow: 0 0 0 3px var(--brand-pale);
 }
-.create-user-feedback {
-  margin: 0;
-}
 .team-panel .panel-head h2,
 .team-panel .table-count {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+.team-search-bar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+.team-search-field {
+  display: grid;
+  width: min(560px, 100%);
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+.team-search-control {
+  position: relative;
+}
+.team-search-control > svg {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  color: var(--ink-faint);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.team-search-control input {
+  width: 100%;
+  height: 42px;
+  padding: 0 43px 0 40px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+.team-search-control input:focus {
+  border-color: #f0a68c;
+  box-shadow: 0 0 0 3px var(--brand-pale);
+}
+.team-search-control input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.team-search-control button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  color: var(--ink-faint);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  transform: translateY(-50%);
+}
+.team-search-control button:hover {
+  color: var(--ink);
+  background: #f0f2f4;
+}
+.team-search-count {
+  padding-bottom: 12px;
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.team-search-empty {
+  display: grid;
+  min-height: 190px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+.team-search-empty strong {
+  color: var(--ink);
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+}
+.team-search-empty span {
+  font-size: 10px;
 }
 .team-invite {
   display: grid;
@@ -1482,6 +1571,8 @@ a {
 }
 .team-feedback {
   display: flex;
+  box-sizing: border-box;
+  width: calc(100% - 40px);
   align-items: center;
   gap: 7px;
   margin: -8px 20px 18px;
@@ -1489,6 +1580,10 @@ a {
   border-radius: 7px;
   font-size: 11px;
   font-weight: 700;
+}
+.team-feedback.create-user-feedback {
+  width: 100%;
+  margin: 0;
 }
 .team-feedback-success {
   color: #147467;
@@ -1849,6 +1944,8 @@ a {
 }
 .sale-feedback {
   display: flex;
+  box-sizing: border-box;
+  width: 100%;
   align-items: center;
   gap: 5px;
   margin-bottom: 18px;
@@ -2147,8 +2244,152 @@ a {
   background: rgba(17, 31, 43, 0.48);
   backdrop-filter: blur(3px);
 }
-body:has(.sale-modal-backdrop) {
+body:has(.sale-modal-backdrop),
+body:has(.confirm-dialog-backdrop) {
   overflow: hidden;
+}
+.confirm-dialog-backdrop {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 31, 43, 0.56);
+  backdrop-filter: blur(5px);
+  animation: confirm-backdrop-in 0.18s ease-out both;
+}
+.confirm-dialog {
+  position: relative;
+  width: min(490px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(216, 222, 227, 0.92);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 28px 80px rgba(18, 32, 44, 0.28);
+  animation: confirm-dialog-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.confirm-dialog::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--brand);
+  content: "";
+}
+.confirm-dialog-danger::before {
+  background: #d94a3a;
+}
+.confirm-dialog-close {
+  position: absolute;
+  z-index: 1;
+  top: 15px;
+  right: 15px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  color: var(--ink-faint);
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+.confirm-dialog-close:hover {
+  color: var(--ink);
+  background: var(--surface-subtle);
+}
+.confirm-dialog-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 17px;
+  padding: 30px 54px 24px 28px;
+}
+.confirm-dialog-icon {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--brand-dark);
+  border: 1px solid #ffd9ca;
+  border-radius: 14px;
+  background: #fff2ec;
+}
+.confirm-dialog-danger .confirm-dialog-icon {
+  color: #b83b30;
+  border-color: #f1ccc7;
+  background: #fff0ee;
+}
+.confirm-dialog-copy {
+  min-width: 0;
+}
+.confirm-dialog-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--brand-dark);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.75px;
+  text-transform: uppercase;
+}
+.confirm-dialog-danger .confirm-dialog-eyebrow {
+  color: #b83b30;
+}
+.confirm-dialog-copy h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Manrope", sans-serif;
+  font-size: 20px;
+  line-height: 1.25;
+}
+.confirm-dialog-description {
+  margin-top: 9px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.confirm-dialog-description strong {
+  color: var(--ink);
+}
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 28px 22px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfc;
+}
+.confirm-dialog-actions .button {
+  min-width: 112px;
+}
+.confirm-dialog-confirm {
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 5px 13px rgba(237, 91, 42, 0.2);
+}
+.confirm-dialog-confirm:hover {
+  background: var(--brand-dark);
+  transform: translateY(-1px);
+}
+.confirm-dialog-confirm-danger {
+  background: #d94a3a;
+  box-shadow: 0 5px 13px rgba(184, 59, 48, 0.2);
+}
+.confirm-dialog-confirm-danger:hover {
+  background: #b83b30;
+}
+.confirm-dialog button:focus-visible {
+  outline: 3px solid rgba(237, 91, 42, 0.23);
+  outline-offset: 2px;
+}
+@keyframes confirm-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes confirm-dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .sale-modal {
   display: flex;
@@ -2677,6 +2918,41 @@ body:has(.sale-modal-backdrop) {
   background: var(--amber-pale);
   font-size: 11px;
   font-weight: 700;
+}
+.products-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 420px) auto;
+  justify-content: start;
+  gap: 12px;
+  align-items: end;
+  padding: 16px 21px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+.products-filters label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+.products-filters select {
+  width: 100%;
+  height: 37px;
+  padding: 0 10px;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fff;
+  outline: none;
+}
+.products-filters select:focus {
+  border-color: #f0a68c;
+  box-shadow: 0 0 0 3px var(--brand-pale);
+}
+.products-filters .button {
+  min-height: 37px;
+  white-space: nowrap;
 }
 .inventory-filters {
   display: grid;
@@ -3414,6 +3690,7 @@ body:has(.sale-modal-backdrop) {
     padding: 17px;
   }
   .inventory-adjustment-grid,
+  .products-filters,
   .inventory-filters {
     grid-template-columns: 1fr;
   }
@@ -3425,9 +3702,11 @@ body:has(.sale-modal-backdrop) {
     flex-direction: column;
   }
   .inventory-form-footer .button,
+  .products-filters .button,
   .inventory-filters .button {
     width: 100%;
   }
+  .products-clear-filter,
   .inventory-clear-filter {
     justify-self: stretch;
   }
@@ -3645,6 +3924,7 @@ body:has(.sale-modal-backdrop) {
     .purchase-receive-lines strong,
     .purchase-overdue-warning span,
     .inventory-adjustment-grid label,
+    .products-filters label,
     .inventory-filters label,
     .inventory-location-list small,
     .movement-kind,
@@ -4809,5 +5089,51 @@ body:has(.sale-modal-backdrop) {
   }
   .sale-return-cards header > strong:last-child {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .team-search-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px 16px;
+  }
+  .team-search-count {
+    padding: 0;
+  }
+  .confirm-dialog-backdrop {
+    align-items: end;
+    padding: 12px;
+  }
+  .confirm-dialog {
+    border-radius: 16px;
+  }
+  .confirm-dialog-content {
+    gap: 13px;
+    padding: 27px 45px 21px 20px;
+  }
+  .confirm-dialog-icon {
+    flex-basis: 42px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+  .confirm-dialog-copy h2 {
+    font-size: 18px;
+  }
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+    padding: 14px 20px 20px;
+  }
+  .confirm-dialog-actions .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-dialog-backdrop,
+  .confirm-dialog {
+    animation: none;
   }
 }
